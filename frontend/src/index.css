@@ -240,3 +240,29 @@ h1, h2, h3, h4, .font-heading {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.25);
 }
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slideUp {
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Touch optimization for mobile buttons and table rows */
+@media (max-width: 640px) {
+  .btn {
+    padding-top: 0.55rem;
+    padding-bottom: 0.55rem;
+  }
+  .modal-content {
+    padding: 20px;
+  }
+}
