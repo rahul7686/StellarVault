@@ -316,32 +316,35 @@ export const App: React.FC = () => {
           />
 
           {/* Architecture Showcase Box */}
-          <div className="glass-panel p-6 sm:p-8 mt-12 bg-gradient-to-br from-[#1a2234] to-[#141a28] border border-white/10 rounded-2xl">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-              <div className="max-w-2xl">
+          <div className="glass-panel p-8 mt-14 bg-gradient-to-r from-[#0d1222] via-[#14182e] to-[#0d1222] border-2 border-[#00f2fe]/40 rounded-3xl shadow-2xl relative overflow-hidden group">
+            <div className="absolute -bottom-16 -right-16 w-60 h-60 bg-[#00f2fe]/15 rounded-full blur-3xl group-hover:bg-[#00f2fe]/25 transition-all" />
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
+              <div className="max-w-3xl space-y-2">
                 <div className="flex items-center gap-2 mb-2">
-                  <Code2 className="w-5 h-5 text-[#00f2fe]" />
-                  <h3 className="text-xl font-bold font-heading text-white">
+                  <span className="p-2 rounded-xl bg-[#00f2fe]/15 border border-[#00f2fe]/40 text-[#00f2fe]">
+                    <Code2 className="w-5 h-5 animate-pulse" />
+                  </span>
+                  <h3 className="text-xl sm:text-2xl font-black font-heading tracking-tight text-white">
                     Self-Custodial Soroban Contract Enforcement
                   </h3>
                 </div>
-                <p className="text-xs text-[#a1a9bb] leading-relaxed">
-                  When deployed on Stellar Mainnet/Testnet, VaultLock stores each vault as an isolated entry (<code>{'DataKey::VaultInfo(u64)'}</code>). Withdrawal transactions call <code>{'withdraw(vault_id)'}</code> where Soroban evaluates the condition <code>{'env.ledger().timestamp() >= unlock_timestamp || balance >= goal_amount'}</code>. If not met, <code>{'Error::VaultLocked (code 7)'}</code> is returned on-chain, keeping funds secure without intermediaries.
+                <p className="text-xs text-[#a8b3cf] leading-relaxed font-mono">
+                  When deployed on Stellar Mainnet/Testnet, VaultLock isolates every vault inside a separate ledger entry (<code>{'DataKey::VaultInfo(u64)'}</code>). Withdrawal requests execute <code>{'withdraw(vault_id)'}</code> where Soroban evaluates <code>{'env.ledger().timestamp() >= unlock_timestamp || balance >= goal_amount'}</code>. If neither condition is fulfilled, <code>{'Error::VaultLocked (code 7)'}</code> is returned on-chain, eliminating intermediary risk.
                 </p>
               </div>
 
-              <div className="flex flex-col gap-2 shrink-0 w-full md:w-auto">
+              <div className="flex flex-col gap-2.5 shrink-0 w-full md:w-auto">
                 <a
                   href="https://github.com/rahul7686/StellarVault"
                   target="_blank"
                   rel="noreferrer"
-                  className="btn btn-primary text-xs py-3 px-5 flex items-center justify-center gap-2 font-bold shadow-lg shadow-[#00f2fe]/20"
+                  className="btn btn-primary text-xs py-3.5 px-6 flex items-center justify-center gap-2 font-black tracking-wide shadow-xl shadow-[#00f2fe]/30 hover:scale-105 transition-all"
                 >
                   <ExternalLink className="w-4 h-4" />
                   View GitHub Repository
                 </a>
-                <span className="text-[11px] text-center text-[#a1a9bb]">
-                  RiseIn Level 4 MVP by <strong className="text-white font-semibold">rahul7686</strong>
+                <span className="text-[11px] font-mono text-center text-[#a8b3cf]">
+                  RiseIn Level 4 & 5 MVP by <strong className="text-white font-bold underline">rahul7686</strong>
                 </span>
               </div>
             </div>
@@ -350,14 +353,14 @@ export const App: React.FC = () => {
       </div>
 
       {/* Footer */}
-      <footer className="glass-header py-6 px-4 md:px-10 text-center text-xs text-[#a1a9bb] border-t border-white/5">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-[11px]">
-            <ShieldAlert className="w-4 h-4 text-[#00f2fe]" />
-            <span>VaultLock (StellarVault) — RiseIn Level 4 Production-Ready MVP & Onboarding Proofs</span>
+      <footer className="glass-header py-7 px-4 md:px-10 text-center text-xs text-[#a8b3cf] border-t border-white/10">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2 text-xs font-mono font-semibold">
+            <ShieldAlert className="w-4 h-4 text-[#00f2fe] animate-pulse" />
+            <span>VaultLock (StellarVault) — RiseIn Level 4 & 5 Production MVP</span>
           </div>
-          <div className="font-mono text-[10px] text-[#6b7280]">
-            Soroban SDK v21 • Rust WebAssembly • 12+ Onboarded Users • Built by rahul7686
+          <div className="font-mono text-[11px] text-[#626f8a] bg-white/5 px-3 py-1 rounded-full border border-white/5">
+            Soroban SDK v21 • Rust Wasm • 12+ Users • Built by <span className="text-white font-bold">rahul7686</span>
           </div>
         </div>
       </footer>
