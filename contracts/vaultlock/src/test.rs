@@ -174,3 +174,30 @@ fn test_early_withdraw_with_penalty() {
     assert_eq!(vault.balance, 0);
     assert!(!vault.is_active);
 }
+
+#[test]
+#[should_panic(expected = "Error(Contract, #3)")]
+fn test_invalid_goal_amount() {
+    let (env, client, owner, _fee_recipient, token, _token_admin_client) = setup_env();
+    client.create_vault(
+        &owner,
+        &String::from_slice(&env, "Zero Goal Fund"),
+        &0, // Invalid: must be > 0
+        &100_000,
+        &token.address,
+    );
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #8)")]
+fn test_invalid_deposit_amount() {
+    let (env, client, owner, _fee_recipient, token, _token_admin_client) = setup_env();
+    let vault_id = client.create_vault(
+        &owner,
+        &String::from_slice(&env, "Test Fund"),
+        &1_000,
+        &100_000,
+        &token.address,
+    );
+    client.deposit(&owner, &vault_id, &0); // Invalid: deposit amount must be > 0
+}
