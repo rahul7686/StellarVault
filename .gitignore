@@ -1,0 +1,12 @@
+# Rust & Soroban
+target/
+**/.soroban/
+*.pdb
+
+# Node & Frontend
+node_modules/
+dist/
+.env
+.env.*
+*.log
+.DS_Store
