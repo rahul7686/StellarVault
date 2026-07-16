@@ -25,3 +25,38 @@ export interface CreateVaultInput {
   assetSymbol: 'XLM' | 'USDC';
   category: 'vacation' | 'hardware' | 'emergency' | 'general';
 }
+
+export interface ToastNotification {
+  id: string;
+  type: 'info' | 'success' | 'error' | 'loading';
+  message: string;
+  detail?: string;
+  duration?: number;
+}
+
+export interface WalletInteractionProof {
+  txHash: string;
+  timestamp: string;
+  walletAddress: string;
+  action: 'CREATE_VAULT' | 'DEPOSIT' | 'WITHDRAW' | 'EARLY_WITHDRAW' | 'CONNECT_WALLET';
+  amount?: number;
+  status: 'CONFIRMED' | 'FAILED' | 'PENDING';
+}
+
+export interface UserFeedbackEntry {
+  id: string;
+  userName: string;
+  walletAddress: string;
+  rating: number; // 1 to 5 stars
+  comment: string;
+  date: string;
+}
+
+export interface AnalyticsMetrics {
+  totalUsersOnboarded: number;
+  activeTestnetWallets: number;
+  totalTransactionsExecuted: number;
+  testnetGasSavedPercent: number;
+  interactionProofs: WalletInteractionProof[];
+  feedbacks: UserFeedbackEntry[];
+}
