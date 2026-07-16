@@ -1,21 +1,39 @@
 #![no_std]
+//! # VaultLock (StellarVault) - Solo On-Chain Savings Vault
+//!
+//! A production-ready Soroban smart contract enabling self-custodial, time-locked, and
+//! target-locked savings vaults on the Stellar network. Enforces cryptographic discipline
+//! by preventing early withdrawals without condition evaluation (`Error::VaultLocked`),
+//! while providing a 5% early withdrawal emergency penalty mechanism (`early_withdraw`).
+
 use soroban_sdk::{
     contract, contracterror, contractimpl, contracttype, symbol_short, token, Address, Env, String, Vec,
 };
 
+/// Numeric error codes returned on-chain during failed verification steps.
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 #[repr(u32)]
 pub enum Error {
+    /// The contract has already been initialized with a fee recipient and penalty basis points.
     AlreadyInitialized = 1,
+    /// The contract requires `initialize()` before vault operations can be executed.
     NotInitialized = 2,
+    /// Vault goal target must be strictly positive (`> 0`).
     InvalidGoalAmount = 3,
+    /// Penalty basis points (`bps`) cannot exceed 10000 (100.00%).
     InvalidPenaltyRate = 4,
+    /// Requested `vault_id` entry does not exist in `DataKey::VaultInfo`.
     VaultNotFound = 5,
+    /// Vault has already been withdrawn (`is_active == false`).
     VaultInactive = 6,
+    /// Vault condition unfulfilled (`current_timestamp < unlock_timestamp && balance < goal_amount`).
     VaultLocked = 7,
+    /// Deposit transfer amount must be strictly greater than zero (`> 0`).
     InvalidDepositAmount = 8,
+    /// Caller authorization verification (`require_auth()`) failed.
     Unauthorized = 9,
+    /// Integer arithmetic computation overflowed or underflowed safe bounds.
     ArithmeticOverflow = 10,
 }
 
