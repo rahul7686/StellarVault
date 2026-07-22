@@ -1,396 +1,77 @@
-# 🪐 VaultLock (StellarVault) — Solo On-Chain Savings Vault
+# VaultLock
 
-[![Stellar Soroban](https://img.shields.io/badge/Stellar-Soroban%20Smart%20Contracts-7D00FF?style=for-the-badge&logo=stellar&logoColor=white)](https://stellar.org)
-[![Rust](https://img.shields.io/badge/Rust-1.80+-000000?style=for-the-badge&logo=rust&logoColor=white)](https://www.rust-lang.org/)
-[![React](https://img.shields.io/badge/React-18+-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
-[![Vite](https://img.shields.io/badge/Vite-5+-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5+-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![RiseIn Level 4 & 5](https://img.shields.io/badge/RiseIn%20Challenge-Level%204%20%26%20Level%205%20Complete-10B981?style=for-the-badge)](https://www.risein.com/)
+VaultLock is a simple Stellar Soroban savings MVP that lets a user create a vault, deposit funds over time, and withdraw only when the unlock date or savings goal is reached.
 
-> **One-Line Pitch:** A self-custodial personal savings smart contract on Stellar Soroban that locks your deposits until a target goal date arrives or a target goal amount is reached — protecting you from your own impulse to withdraw early, while offering a 5% emergency withdrawal deterrent with zero third parties holding your funds.
+## What it does
 
----
+- Create a savings vault with a goal amount, unlock date, and asset
+- Deposit XLM or USDC into the vault
+- Lock withdrawals until the goal or time condition is met
+- Support an optional early withdrawal path with a penalty
+- Show a clean dashboard for vault progress and status
 
-## 📋 Table of Contents
-1. [Executive Summary](#-1-executive-summary)
-2. [Complete Repository Folder Structure](#-2-complete-repository-folder-structure)
-3. [Problem Statement & Market Gap Analysis](#-3-problem-statement--market-gap-analysis)
-4. [Why Stellar & Soroban Smart Contracts?](#-4-why-stellar--soroban-smart-contracts)
-5. [Core Technical Architecture & Storage Schemas](#-5-core-technical-architecture--storage-schemas)
-6. [Smart Contract Entry Points & API Reference](#-6-smart-contract-entry-points--api-reference)
-7. [RiseIn Complexity Evaluation Questions & Detailed Answers](#-7-risein-complexity-evaluation-questions--detailed-answers)
-8. [Level 4 Production MVP & Real User Validation Report](#-8-level-4-production-mvp--real-user-validation-report)
-9. [Level 5 Stretch Goal: Early Withdrawal Penalty Deterrent](#-9-level-5-stretch-goal-early-withdrawal-penalty-deterrent)
-10. [Step-by-Step Installation & Local Development Guide](#-10-step-by-step-installation--local-development-guide)
-11. [Built-in Judge Sandbox & Time Travel Walkthrough](#-11-built-in-judge-sandbox--time-travel-walkthrough)
-12. [Security Considerations & On-Chain Safeguards](#-12-security-considerations--on-chain-safeguards)
-13. [Author & Submission Verification](#-13-author--submission-verification)
+## Why Stellar
 
----
+- Low fees make small recurring deposits practical
+- Fast finality keeps the app responsive
+- Soroban smart contracts enforce the lock on-chain
 
-## 🌟 1. Executive Summary
+## Project Structure
 
-**VaultLock (StellarVault)** is a production-grade decentralized application (dApp) built on the **Stellar network** using **Soroban Rust smart contracts** and a modern **React + Vite + TypeScript** web interface. It addresses the psychological barrier of wealth accumulation by turning savings goals into cryptographically enforced on-chain vaults.
+- `contracts/vaultlock/` - Soroban smart contract and Rust tests
+- `frontend/` - React + TypeScript dashboard
+- `ARCHITECTURE.md` - design notes and storage model
+- `RELEASE_NOTES.md` - release summary
 
-By removing human willpower from the equation, VaultLock ensures that deposited capital remains safe from impulse spending or "minor life emergencies" until verifiable, deterministic milestone criteria are met on the ledger (`env.ledger().timestamp() >= unlock_timestamp` or `balance >= goal_amount`). Unlike centralized banking apps or proprietary yield platforms, VaultLock gives users 100% self-custodial control, verifiable on-chain transparency, and sub-second transaction finality at fractions of a cent per deposit.
+## Contract API
 
----
+- `initialize(fee_recipient, penalty_bps)`
+- `create_vault(owner, title, goal_amount, unlock_timestamp, asset)`
+- `deposit(depositor, vault_id, amount)`
+- `withdraw(vault_id)`
+- `early_withdraw(vault_id)`
+- `get_vault(vault_id)`
+- `get_user_vaults(owner)`
 
-## 📂 2. Complete Repository Folder Structure
+## MVP Goals
 
-Below is the complete architectural layout of the **StellarVault** project, highlighting how Soroban smart contracts, automated deployment scripts, unit test suites, and Next-Gen React frontend components are structured:
+- Single-vault savings flow
+- Goal or time based unlock
+- Simple mobile-friendly UI
+- Clear loading and status feedback
+- Production-ready contract structure
 
-```
-StellarVault/
-├── .gitignore                          # Root Git ignore rules (node_modules, target, .env)
-├── README.md                           # Master project documentation (This Document)
-├── ARCHITECTURE.md                     # Deep-dive Soroban state storage & gas optimization guide
-├── RELEASE_NOTES.md                    # Production release notes for v1.0.0 (Level 4 & Level 5)
-│
-├── contracts/                          # Soroban Rust Smart Contracts Workspace
-│   └── vaultlock/                      # Core VaultLock Smart Contract Package
-│       ├── Cargo.toml                  # Rust dependencies (soroban-sdk v21/v22, testutils)
-│       ├── Cargo.lock                  # Exact dependency resolution graph
-│       ├── deploy.sh                   # Automated build & Stellar Testnet deployment script
-│       ├── testnet_config.json         # Deployed Testnet metadata & contract address registry
-│       ├── src/
-│       │   ├── lib.rs                  # Smart contract logic, storage enums, structs, & entry points
-│       │   └── test.rs                 # Comprehensive Rust unit tests (7 passing tests)
-│       └── test_snapshots/             # Deterministic ledger snapshots generated by `cargo test`
-│           └── test/
-│               ├── test_create_and_deposit.1.json
-│               ├── test_early_withdraw_with_penalty.1.json
-│               ├── test_invalid_deposit_amount.1.json
-│               ├── test_invalid_goal_amount.1.json
-│               ├── test_withdraw_locked_fails.1.json
-│               ├── test_withdraw_when_goal_reached.1.json
-│               └── test_withdraw_when_time_reached.1.json
-│
-└── frontend/                           # Next-Gen Reactive Web Application (Vite + React + TS)
-    ├── package.json                    # Node npm scripts & dependencies (React 18, Lucide, Confetti)
-    ├── package-lock.json               # Lockfile for reproducible frontend builds
-    ├── tsconfig.json                   # TypeScript compiler rules & strict typing setup
-    ├── vite.config.ts                  # Vite bundler configuration & asset optimization
-    ├── index.html                      # Entry HTML DOM template with Google Fonts (`Inter`, `Outfit`)
-    └── src/
-        ├── main.tsx                    # React DOM root render entry point
-        ├── App.tsx                     # Master state controller, time-travel engine, & modal orchestration
-        ├── index.css                   # HSL dark mode design system, glassmorphism (`.glass-panel`), & animations
-        ├── types/
-        │   └── vault.ts                # TypeScript data interfaces (Vault, SimulationState, Proofs, Feedbacks)
-        ├── utils/
-        │   └── exporter.ts             # Utility methods to export verification proofs as JSON/CSV (`exportProofAsJSON`)
-        └── components/
-            ├── Navbar.tsx              # Top navigation bar with Wallet connect, Sandbox toggle, & Validation actions
-            ├── DashboardStats.tsx      # Overview KPI cards (Total Saved, Active Vaults, Community Fees)
-            ├── SimulationPanel.tsx     # Judge Sandbox Toolbar (+7/+30 Days time travel, state reset, live breakdown)
-            ├── VaultGrid.tsx           # Responsive CSS grid rendering active and completed vault cards
-            ├── VaultCard.tsx           # Individual vault card with neon progress bar and conditional action triggers
-            ├── CreateVaultModal.tsx    # Interactive modal for setting up new time-locked & goal-locked vaults
-            ├── DepositModal.tsx        # Deposit modal featuring quick +10 / +50 / +100 XLM presets
-            ├── EarlyWithdrawModal.tsx  # Level 5 emergency withdrawal modal displaying exact 5% penalty deductions
-            ├── ToastContainer.tsx      # Level 4 notification system simulating RPC loading states & transaction hashes
-            ├── AnalyticsModal.tsx      # Level 4 Validation & Proofs dashboard showing 12+ real onboarded users & logs
-            └── FeedbackModal.tsx       # Level 4 mandatory user feedback collection & 5-star rating widget
-```
+## Local Development
 
----
+### Contract
 
-## 📖 3. Problem Statement & Market Gap Analysis
-
-### The Psychological Hurdle of Saving Capital
-Wealth accumulation requires sustained discipline over extended periods. However, human behavioral economics demonstrates that when funds are immediately accessible with zero friction, individuals consistently fall victim to **present bias**—prioritizing immediate gratification or minor impulse purchases over long-term financial security.
-
-### Traditional & Centralized Solutions Fall Short:
-1. **Traditional Banking Accounts:** Standard savings and checking accounts permit instant transfers with a single tap. Even "high-yield" savings accounts rarely impose strict barriers against early withdrawals, leaving users vulnerable to their own momentary lapses in discipline.
-2. **Centralized FinTech Savings Apps:** Apps that promise "locked savings" rely entirely on proprietary internal databases. The company can freeze funds arbitrarily, suffer data breaches, or change withdrawal terms without notice. Furthermore, users do not own their private keys (`Not your keys, not your coins`).
-3. **Existing DeFi Staking & Yield Protocols:** Most DeFi yield platforms lock assets for fixed staking epochs, but their primary purpose is speculative farming rather than personal financial discipline. They lack customizable multi-condition triggers (such as unlocking when a specific dollar savings milestone is reached) and often expose everyday savers to complex smart contract vulnerability risks or volatile liquidity pools.
-
-### The VaultLock Solution:
-VaultLock bridges this gap by turning personal savings discipline into **immutable, self-custodial code**. When you deposit XLM or USDC into VaultLock, your capital is mathematically secured by Soroban consensus rules. You cannot bypass your own rules because the contract evaluates the exact cryptographic state of the blockchain before releasing a single stroop of value.
-
----
-
-## ⚡ 4. Why Stellar & Soroban Smart Contracts?
-
-VaultLock is engineered specifically for the **Stellar ecosystem** because its foundational characteristics align perfectly with everyday consumer financial utilities:
-
-### 1. Negligible Transaction Fees ($0.00001 per tx)
-On monolithic Layer 1 blockchains like Ethereum, depositing $15 into a savings contract could easily cost $5 to $20 in gas fees, rendering micro-savings habits economically impossible. Stellar transaction fees cost fractions of a cent (approx. `100 stroops = 0.00001 XLM`), allowing everyday savers to make daily or weekly $5 micro-deposits without gas fee attrition.
-
-### 2. Sub-Second Finality (3 to 5 Seconds)
-Stellar Consensus Protocol (SCP) achieves deterministic finality in seconds without probabilistic block reorganizations. When a user creates a vault or deposits funds, the UI updates almost instantaneously, providing the fluid responsiveness of a Web2 fintech app while retaining 100% Web3 decentralization.
-
-### 3. Soroban Rust Smart Contracts
-Soroban brings modern, high-performance WebAssembly (Wasm) smart contracts to Stellar using **Rust**. Rust's strict compile-time safety guarantees eliminate entire classes of memory errors, buffer overflows, and undefined behaviors, ensuring that user savings remain safeguarded against smart contract exploits.
-
-### 4. Deterministic On-Chain Time Verification
-Soroban's environment exposes exact, tamper-proof ledger metadata (`env.ledger().timestamp()`). This allows VaultLock to execute precise time comparisons that neither miners, validators, nor the vault owner can manipulate.
-
----
-
-## 🏗️ 5. Core Technical Architecture & Storage Schemas
-
-### System Architecture Diagram
-```
-+-----------------------------------------------------------------------------------+
-|                               Next-Gen React Frontend                             |
-|  +--------------------+  +----------------------+  +---------------------------+  |
-|  | Navbar / Wallet UI |  | Judge Sandbox Toolbar|  | Validation & Proofs Dashboard|
-|  +--------------------+  +----------------------+  +---------------------------+  |
-|  +-----------------------------------------------------------------------------+  |
-|  |                  Responsive Vault Grid & Interactive Modals                 |  |
-|  +-----------------------------------------------------------------------------+  |
-+----------------------------------------+--+---------------------------------------+
-                                         |  |
-                 RPC Queries / SDK Calls |  | Signed Soroban Transactions
-                                         v  v
-+-----------------------------------------------------------------------------------+
-|                       Stellar Soroban Smart Contract (Rust / Wasm)                |
-|                                                                                   |
-|  +-----------------------------------------------------------------------------+  |
-|  |  initialize(fee_recipient, penalty_bps) -> Configures global fee parameters |  |
-|  +-----------------------------------------------------------------------------+  |
-|  |  create_vault(owner, title, goal_amount, unlock_timestamp, asset)           |  |
-|  |  -> Generates unique u64 ID & stores entry in DataKey::VaultInfo(id)        |  |
-|  +-----------------------------------------------------------------------------+  |
-|  |  deposit(vault_id, amount) -> Transfers tokens & increments vault balance   |  |
-|  +-----------------------------------------------------------------------------+  |
-|  |  withdraw(vault_id) -> Enforces (time >= unlock OR balance >= goal)         |  |
-|  |  -> Panics with Error::VaultLocked (code 7) if condition unfulfilled        |  |
-|  +-----------------------------------------------------------------------------+  |
-|  |  early_withdraw(vault_id) -> Level 5 Emergency Exit mechanism               |  |
-|  |  -> Deducts exact 5% penalty (500 bps) and transfers to fee_recipient       |  |
-|  +-----------------------------------------------------------------------------+  |
-+----------------------------------------+------------------------------------------+
-                                         |
-                                         v
-+-----------------------------------------------------------------------------------+
-|                           Stellar Ledger & Token Contracts                        |
-|   soroban_sdk::token::Client::new(env, asset).transfer(owner, contract, amount)   |
-+-----------------------------------------------------------------------------------+
-```
-
-### Soroban Storage Schema (`DataKey`)
-To ensure optimal storage efficiency and minimal gas consumption, VaultLock divides state into clean, isolated keys (`contracts/vaultlock/src/lib.rs`):
-
-```rust
-#[contracttype]
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum DataKey {
-    Config,                     // Singleton global contract configuration
-    VaultInfo(u64),             // O(1) direct lookup per vault instance
-    UserVaults(Address),        // Vector of vault IDs owned by a specific address
-    Counter,                    // Monotonically increasing u64 ID generator
-}
-
-#[contracttype]
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Vault {
-    pub vault_id: u64,          // Monotonically assigned unique identifier
-    pub owner: Address,         // Cryptographic owner of the savings vault
-    pub title: String,          // Human-readable title (e.g., "RiseIn Hackathon Fund")
-    pub balance: i128,          // Current token balance tracked inside the vault
-    pub goal_amount: i128,      // Target financial savings goal in token stroops
-    pub unlock_timestamp: u64,  // Target Unix timestamp when time-lock expires
-    pub asset: Address,         // Stellar contract address of the deposited asset (XLM/USDC)
-    pub is_active: bool,        // Status flag (true = active, false = withdrawn)
-}
-```
-
----
-
-## 🔌 6. Smart Contract Entry Points & API Reference
-
-### `initialize(env: Env, fee_recipient: Address, penalty_bps: u32)`
-Configures the global contract fee treasury address and early withdrawal penalty rate (`500 bps` = `5.00%`).
-- **Access Control:** Can only be invoked once (`Error::AlreadyInitialized`).
-
-### `create_vault(env: Env, owner: Address, title: String, goal_amount: i128, unlock_timestamp: u64, asset: Address) -> u64`
-Creates a new personal time-locked and goal-locked savings vault.
-- **Verification:** Requires `owner.require_auth()` and `goal_amount > 0`.
-- **Returns:** The newly assigned unique `vault_id: u64`.
-
-### `deposit(env: Env, depositor: Address, vault_id: u64, amount: i128)`
-Deposits `amount` of the specified `asset` token into the designated vault.
-- **Verification:** Requires `depositor.require_auth()`, verifies `vault.is_active == true`, and checks `amount > 0`.
-- **Execution:** Calls `token::Client::new(&env, &vault.asset).transfer(&depositor, &env.current_contract_address(), &amount)`.
-
-### `withdraw(env: Env, vault_id: u64)`
-Executes standard withdrawal, releasing 100% of the accumulated balance back to the `owner` without any penalty fees.
-- **Condition Verification:** Enforces that either `env.ledger().timestamp() >= vault.unlock_timestamp` OR `vault.balance >= vault.goal_amount`.
-- **Failure Behavior:** If neither condition is met, panics with `Error::VaultLocked (code 7)`.
-
-### `early_withdraw(env: Env, vault_id: u64) -> i128`
-Allows the vault owner to execute an emergency withdrawal before the target date or goal amount is reached (`Level 5 Stretch Goal`).
-- **Penalty Calculation:** Computes exact 5% penalty using basis points: `(vault.balance * config.penalty_bps as i128) / 10000`.
-- **Token Distribution:** Transfers the `penalty` to `config.fee_recipient` and the remaining `payout` back to the `owner`. Marks the vault `is_active = false`.
-
----
-
-## ❓ 7. RiseIn Complexity Evaluation Questions & Detailed Answers
-
-To demonstrate mastery over Soroban smart contract engineering for the RiseIn challenge judges, here are our comprehensive answers to the four core technical complexity evaluation questions:
-
-### 1. How does the contract enforce time-based state transitions or time-locked actions using the Soroban ledger environment?
-The contract enforces strict time-based state transitions by directly reading the deterministic ledger timestamp from the Soroban host environment via `env.ledger().timestamp()`. During `create_vault()`, the user passes a target `unlock_timestamp: u64`, which is persisted in the immutable storage ledger under `DataKey::VaultInfo(vault_id)`.
-
-Whenever a withdrawal attempt occurs via `withdraw(vault_id)`, the contract executes an exact boolean comparison between the current ledger clock (`env.ledger().timestamp()`) and `vault.unlock_timestamp`. Because `env.ledger().timestamp()` is tied directly to Stellar consensus block production and cannot be altered by user input or RPC node manipulation, any withdrawal request submitted even one second prior to the target timestamp is immediately rejected with on-chain panic `Error::VaultLocked (code 7)`.
-
-### 2. How are multiple unlocking conditions (`Time OR Goal Amount`) verified safely before releasing funds?
-VaultLock implements logical `OR` branching inside `withdraw(vault_id)` to ensure that users are rewarded for financial overperformance:
-```rust
-let is_time_reached = env.ledger().timestamp() >= vault.unlock_timestamp;
-let is_goal_reached = vault.balance >= vault.goal_amount;
-
-if !is_time_reached && !is_goal_reached {
-    return Err(Error::VaultLocked);
-}
-```
-Before any token transfer is initiated, the contract verifies both conditions independently. If a user sets a 1-year time lock to save `1,000 XLM`, but unexpectedly achieves a balance of `1,000 XLM` after only 2 months through diligent savings, `is_goal_reached` evaluates to `true`. This grants the user immediate fee-free access to their capital. If neither condition is true, the function halts execution before modifying any balances, preserving fund safety under all edge cases.
-
-### 3. How does the contract calculate and distribute penalty fees during early emergency withdrawals without rounding errors (`Basis Points`)?
-In Rust smart contracts on Soroban, floating-point numbers (`f32`, `f64`) are prohibited to guarantee absolute deterministic consensus across all nodes on the network. To calculate the 5% early withdrawal penalty accurately without precision loss, VaultLock uses exact **basis points (`bps`)** where `10000 bps = 100.00%` and `500 bps = 5.00%`:
-```rust
-let penalty = (vault.balance * config.penalty_bps as i128) / 10000;
-let payout = vault.balance - penalty;
-```
-By multiplying `vault.balance` by `500` before dividing by `10000`, the contract maintains full 128-bit integer precision (`i128`). The `penalty` is transferred cleanly to `config.fee_recipient` (the community savings pool treasury), while the exact remainder (`payout`) is transferred back to `vault.owner`.
-
-### 4. How does the contract isolate individual user vault data and verify cryptographic ownership (`require_auth`)?
-VaultLock prevents storage contention and unauthorized access by isolating each vault into a distinct, unique storage entry keyed by a monotonically increasing 64-bit integer (`DataKey::VaultInfo(vault_id)`). To maintain high-speed enumeration without scanning the entire storage space, the contract also maintains `DataKey::UserVaults(owner_address)`, which stores a vector of vault IDs belonging to that specific user.
-
-Every state-modifying function (`deposit`, `withdraw`, `early_withdraw`) begins by executing:
-```rust
-let vault: Vault = env.storage().persistent().get(&DataKey::VaultInfo(vault_id)).ok_or(Error::VaultNotFound)?;
-vault.owner.require_auth();
-```
-`vault.owner.require_auth()` invokes Soroban's native cryptographic authentication framework. The Soroban host verifies that the transaction was cryptographically signed by the private key of `vault.owner`. If a third party attempts to invoke `withdraw(vault_id)` on another user's vault, the transaction fails instantly at the protocol level with an `AuthError` before executing contract logic.
-
----
-
-## 🏆 8. Level 4 Production MVP & Real User Validation Report
-
-This project has been engineered specifically to surpass all evaluation metrics required for **Level 4: Production MVP + Real Users + Product Validation**:
-
-### 1. Production MVP Architecture & Telemetry
-- **Stable Frontend-Contract Synchronization:** Built with React 18 and Vite 5, providing instant state updates and reactive UI feedback.
-- **Robust Loading & Error Handling:** Integrated a comprehensive **Toast Notification Engine (`ToastContainer.tsx`)** that simulates on-chain Soroban RPC transaction delays (`"Submitting to Soroban Testnet..."`, `"Verifying time-lock conditions..."`) and catches contract errors cleanly without application crashes.
-- **Stellar Testnet Deployment Configuration:** Includes automated shell deployment (`contracts/vaultlock/deploy.sh`) and live testnet registry (`testnet_config.json`) deployed on active testnet address `CAV7J32QW5L4F66XZ72OZX25Z64D7S5X2U4E6U2I5Y4Y4T5U6O7P8Q9R`.
-
-### 2. Mandatory User Onboarding & Proof of Wallet Interactions
-- **12+ Verified Onboarded Users:** Exceeds the **Minimum 10 real users onboarded** requirement.
-- **Validation & Proofs Dashboard (`AnalyticsModal.tsx`):** Displays a live table of verified on-chain wallet interactions across unique addresses (`GDX7...4Y29`, `GA9Q...8L31`, `GB3X...9K12`, `GC8M...2P77`, etc.), tracking exact Soroban transaction hashes (`0x8f2a...c9e1`), action types (`CREATE_VAULT`, `DEPOSIT`), and timestamps.
-- **One-Click Proof Export (`exporter.ts`):** Evaluators can click **"Export Proof JSON"** or **"Export Proof CSV"** inside the UI to download verifiable proof logs instantly.
-
-### 3. Mandatory User Feedback & Usability Reviews
-- **Interactive Feedback Widget (`FeedbackModal.tsx`):** Allows onboarded savers and contest judges to submit 1-to-5 star usability ratings and qualitative reviews directly from their connected wallets.
-- **Pre-Loaded Testimonial Data:** Features verified reviews praising the time-lock discipline mechanism, 5% emergency deterrent calculation, and testnet transaction speed.
-
-### 4. Professional Git Repository Standards
-- **15+ Meaningful Commits:** Clean, logical, feature-separated commit history authored under username **`rahul7686`**.
-
----
-
-## 🔥 9. Level 5 Stretch Goal: Early Withdrawal Penalty Deterrent
-
-VaultLock achieves the **Level 5 Stretch Goal** by implementing a balanced, real-world economic mechanism: what happens if a user faces an actual, unforeseen life emergency and *must* access their funds before the unlock date or goal amount is reached?
-
-Instead of locking funds in a dead end, VaultLock provides the `early_withdraw(vault_id)` entry point:
-1. **Emergency Flexibility:** The user can unlock their vault immediately at any time.
-2. **Economic Deterrent:** To discourage casual, non-emergency impulse withdrawals, the contract deducts a **5% penalty fee (`penalty_bps = 500`)** from the principal balance.
-3. **Community Alignment:** The 5% fee is not collected by a corporate intermediary. Instead, it is automatically transferred to `config.fee_recipient`—a community savings treasury pool designed to fund future hackathon prizes or reward long-term, disciplined savers on the network.
-
----
-
-## 🛠️ 10. Step-by-Step Installation & Local Development Guide
-
-### Prerequisites
-- **Rust Toolchain (`v1.80+`)**: Ensure Rust and Cargo are installed (`rustup update`).
-- **WebAssembly Target**: Add the Wasm target: `rustup target add wasm32-unknown-unknown`.
-- **Stellar CLI / Soroban CLI**: Install via `cargo install --locked stellar-cli`.
-- **Node.js (`v18+`)**: Required for the Next-Gen Vite + React frontend.
-
-### Step 1: Build and Verify Soroban Smart Contract Unit Tests
 ```bash
-# Navigate to the contract workspace
 cd contracts/vaultlock
-
-# Build the Wasm binary
-cargo build --target wasm32-unknown-unknown --release
-
-# Run the comprehensive unit test suite (7 tests)
-cargo test -- --nocapture
-```
-*Expected Output:*
-```text
-running 7 tests
-test test::test_invalid_goal_amount - should panic ... ok
-test test::test_invalid_deposit_amount - should panic ... ok
-test test::test_withdraw_locked_fails ... ok
-test test::test_create_and_deposit ... ok
-test test::test_withdraw_when_time_reached ... ok
-test test::test_withdraw_when_goal_reached ... ok
-test test::test_early_withdraw_with_penalty ... ok
-
-test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; finished in 0.69s
+cargo test
 ```
 
-### Step 2: Deploy to Stellar Testnet (Optional / Automated)
+### Frontend
+
 ```bash
-# Run our automated deployment shell script
-chmod +x deploy.sh
-./deploy.sh
-```
-
-### Step 3: Launch the Next-Gen Reactive Frontend
-```bash
-# Navigate to the frontend workspace
-cd ../../frontend
-
-# Install Node dependencies
+cd frontend
 npm install
-
-# Start the Vite local development server
 npm run dev
 ```
-Open your web browser at **`http://localhost:5173/`** to interact with the application.
 
----
+## Deployment Notes
 
-## 🎮 11. Built-in Judge Sandbox & Time Travel Walkthrough
+- Deploy the Soroban contract to Stellar testnet
+- Point the frontend to the deployed contract ID
+- Add the final demo link, contract address, and user proof before submission
 
-To ensure that RiseIn contest evaluators can test time locks, goal completions, and early withdrawal penalties in seconds without needing to wait for real-world weeks to elapse or request testnet faucet tokens, VaultLock includes an integrated **Judge Sandbox Time Travel Engine**:
+## Submission Checklist
 
-1. **Explore Preset Vaults:** Upon launch, the dashboard renders three pre-configured vaults:
-   - *"RiseIn Stellar Hackathon Trip"* (`850 / 1,000 XLM`, unlocks in `+12 Days`)
-   - *"MacBook Pro M4 Hardware Fund"* (`320 / 2,500 USDC`, unlocks in `+45 Days`)
-   - *"Solo On-Chain Emergency Buffer"* (`5,000 / 5,000 XLM`, **Goal Met! 🎉 Unlocked**)
-2. **Test Standard Withdrawals on Goal Completion:** Click **Withdraw** on the *"Solo On-Chain Emergency Buffer"* vault. Because `balance >= goal_amount`, the contract allows instant, 100% fee-free withdrawal (`Triggering celebratory confetti burst 🎊`).
-3. **Test Time Lock Enforcement:** Attempt to click **Withdraw** on the *"RiseIn Stellar Hackathon Trip"* vault (`850 / 1,000 XLM`). Because neither condition is met, the UI shows why the Soroban contract returns `Error::VaultLocked (code 7)`.
-4. **Time Travel (+7 Days / +30 Days):** Use the top **Judge Sandbox Toolbar** and click **`+30 Days`**. Watch the simulated ledger clock fast-forward. Instantly, the *"RiseIn Stellar Hackathon Trip"* vault detects `current_time >= unlock_timestamp` and transitions to **🎉 Unlocked**, enabling fee-free withdrawal!
-5. **Test Early Withdrawal 5% Penalty:** Click **Early Withdraw** on any locked vault to inspect the exact 5% basis-point breakdown before executing the emergency exit.
-6. **Verify Level 4 Proofs & Feedback:** Click **"Validation & Proofs"** at the top right to view the 12+ onboarded users and export the JSON verification file. Click **"Give Feedback"** to submit a test review!
+- Public GitHub repository
+- README documentation
+- Minimum 15 meaningful commits
+- Live demo link
+- Contract deployment address
+- Screenshots for UI and mobile layout
+- Proof of 10+ wallet interactions
+- Basic user feedback summary
 
----
-
-## 🔒 12. Security Considerations & On-Chain Safeguards
-
-1. **Reentrancy Protection by Design:** Soroban smart contracts execute sequentially within a deterministic host environment. State changes (`is_active = false`, balance zeroes) occur before or atomically alongside token transfers (`token::Client::transfer`), preventing reentrancy attacks.
-2. **Checked Arithmetic Bounds:** All addition and basis-point multiplication operations use safe Rust numeric types (`i128`, `u64`), preventing arithmetic overflows or underflows (`Error::ArithmeticOverflow`).
-3. **Access Control Enforcement:** Every mutation requires explicit `owner.require_auth()` verification, guaranteeing that no unauthorized actor or contract admin can seize user funds.
-4. **Zero Administrative Backdoors:** Once initialized, `Config` parameters (`fee_recipient`, `penalty_bps`) are locked. There is no administrative "pause" or "drain" function capable of confiscating user savings.
-
----
-
-## 👤 13. Author & Submission Verification
-
-This project was conceived, engineered, tested, and pushed from scratch for the **RiseIn Stellar Journey to Mastery Monthly Builder Challenge**.
-
-- **Author & Developer:** [rahul7686](https://github.com/rahul7686)
-- **GitHub Repository:** [https://github.com/rahul7686/StellarVault](https://github.com/rahul7686/StellarVault)
-- **Git Commit Count:** `15+ Meaningful Commits` (`e9a0a9a..735030c`)
-- **Challenge Levels Completed:** `Level 4 (Production MVP + Real Users)` & `Level 5 (Stretch Goal Penalty Deterrent)`
-
----
-*Built with ❤️ and Rust for the Stellar & RiseIn Builder Community.*
