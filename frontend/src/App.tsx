@@ -1,15 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import {
-  Shield,
   Wallet,
   CalendarDays,
   Target,
-  ArrowRight,
   CheckCircle2,
   Clock3,
-  BadgeDollarSign,
   Users,
-  LineChart,
 } from 'lucide-react';
 import { Navbar } from './components/Navbar';
 import { DashboardStats } from './components/DashboardStats';
@@ -192,21 +188,17 @@ export const App: React.FC = () => {
       <main className="mx-auto max-w-7xl px-4 pb-16 pt-8 md:px-8">
         <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
           <div className="glass-panel p-6 md:p-8">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-[#a8b3cf]">
-              <Shield className="h-3.5 w-3.5 text-[#00f2fe]" />
-              VaultLock on Stellar Soroban
-            </div>
-            <h2 className="mt-4 max-w-2xl text-3xl font-bold tracking-tight text-white md:text-5xl">
-              Simple savings vaults that stay locked until time or goal is reached.
+            <h2 className="max-w-2xl text-3xl font-semibold tracking-tight text-white md:text-4xl">
+              Save money in a vault that only unlocks on the date or goal you set.
             </h2>
             <p className="mt-4 max-w-2xl text-sm leading-6 text-[#a8b3cf] md:text-base">
-              VaultLock keeps the product easy to understand: create one vault, deposit over time, and withdraw only when the goal or unlock date is met. The contract handles the rules, so users do not need to trust the app.
+              VaultLock is a simple Stellar app for personal savings. Create one vault, deposit over time, and withdraw when the lock conditions are met.
             </p>
 
             <div className="mt-6 flex flex-wrap gap-3">
               <button className="btn btn-primary" onClick={() => setIsCreateOpen(true)}>
                 <Wallet className="h-4 w-4" />
-                Create vault
+                New vault
               </button>
               <button className="btn btn-secondary" onClick={() => advanceTime(7)}>
                 <CalendarDays className="h-4 w-4" />
@@ -243,26 +235,13 @@ export const App: React.FC = () => {
                 'Deposit whenever you want, using XLM or USDC.',
                 'Withdraw only when time or goal conditions are satisfied.',
               ].map((step, index) => (
-                <div key={step} className="flex gap-3 rounded-2xl border border-white/10 bg-black/20 p-4">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#00f2fe]/15 text-sm font-semibold text-[#00f2fe]">
+                <div key={step} className="flex gap-3 rounded-xl border border-white/10 bg-white/5 p-4">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-black/20 text-sm font-semibold text-white">
                     {index + 1}
                   </div>
                   <p className="text-sm leading-6 text-[#d7deee]">{step}</p>
                 </div>
               ))}
-            </div>
-
-            <div className="mt-6 rounded-2xl border border-[#10b981]/20 bg-[#10b981]/10 p-4">
-              <div className="flex items-center gap-2 text-sm font-semibold text-[#10b981]">
-                <BadgeDollarSign className="h-4 w-4" />
-                MVP checklist
-              </div>
-              <ul className="mt-3 space-y-2 text-sm text-[#cdd6ea]">
-                <li>Production-ready contract in Rust</li>
-                <li>Simple mobile-friendly dashboard</li>
-                <li>Proof and feedback sections for submission</li>
-                <li>Clear loading states and toast updates</li>
-              </ul>
             </div>
           </div>
         </section>
@@ -281,8 +260,7 @@ export const App: React.FC = () => {
               <h3 className="text-xl font-semibold text-white">Vaults</h3>
               <p className="text-sm text-[#a8b3cf]">A clean view of each savings goal, unlock status, and withdraw action.</p>
             </div>
-            <div className="flex items-center gap-2 text-sm text-[#a8b3cf]">
-              <LineChart className="h-4 w-4 text-[#00f2fe]" />
+            <div className="text-sm text-[#a8b3cf]">
               {simState.walletConnected ? `Wallet ${simState.walletAddress || 'connected'}` : 'Wallet disconnected'}
             </div>
           </div>
@@ -321,8 +299,7 @@ export const App: React.FC = () => {
             <p className="mt-2 text-sm leading-6 text-[#a8b3cf]">
               The contract is already structured for time-locked or goal-locked withdrawals. For a real submission, connect the frontend to your deployed testnet contract, add actual user proof, and replace any demo counts with verified values.
             </p>
-            <div className="mt-4 flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-[#d7deee]">
-              <ArrowRight className="h-4 w-4 text-[#00f2fe]" />
+            <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-[#d7deee]">
               Keep the UI simple, mobile friendly, and easy to demo.
             </div>
           </div>
