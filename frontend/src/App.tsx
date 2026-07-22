@@ -46,9 +46,11 @@ type Activity = {
 
 type Toast = { id: number; message: string; tone: 'info' | 'success' | 'error' };
 
-const RPC_URL = 'https://soroban-testnet.stellar.org:443';
-const NETWORK_PASSPHRASE = Networks.TESTNET;
-const CONTRACT_ID = 'CAV7J32QW5L4F66XZ72OZX25Z64D7S5X2U4E6U2I5Y4Y4T5U6O7P8Q9R';
+const RPC_URL = import.meta.env.VITE_VAULTLOCK_RPC_URL ?? 'https://soroban-testnet.stellar.org:443';
+const NETWORK_PASSPHRASE = import.meta.env.VITE_VAULTLOCK_NETWORK_PASSPHRASE ?? Networks.TESTNET;
+const CONTRACT_ID =
+  import.meta.env.VITE_VAULTLOCK_CONTRACT_ID ??
+  'CAV7J32QW5L4F66XZ72OZX25Z64D7S5X2U4E6U2I5Y4Y4T5U6O7P8Q9R';
 const XLM_ASSET_CONTRACT_ID = StellarAsset.native().contractId(NETWORK_PASSPHRASE);
 
 const server = new Server(RPC_URL);

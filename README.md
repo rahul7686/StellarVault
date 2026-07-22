@@ -58,6 +58,18 @@ npm install
 npm run dev
 ```
 
+### Frontend Configuration
+
+Copy `frontend/.env.example` to `frontend/.env` and fill in the values you want to use for the live contract.
+
+Required variables:
+
+- `VITE_VAULTLOCK_RPC_URL`
+- `VITE_VAULTLOCK_NETWORK_PASSPHRASE`
+- `VITE_VAULTLOCK_CONTRACT_ID`
+
+The default example values point to the Stellar testnet setup used by this repo.
+
 ## Deployment Notes
 
 - Deploy the Soroban contract to Stellar testnet
@@ -74,4 +86,3 @@ npm run dev
 - Screenshots for UI and mobile layout
 - Proof of 10+ wallet interactions
 - Basic user feedback summary
-
