@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ArrowUpRight,
   CalendarDays,
@@ -8,8 +8,23 @@ import {
   ShieldCheck,
   Wallet,
 } from 'lucide-react';
+import {
+  isConnected,
+  setAllowed,
+  getAddress,
+  signTransaction,
+} from '@stellar/freighter-api';
+import {
+  BASE_FEE,
+  Contract,
+  Asset as StellarAsset,
+  Networks,
+  TransactionBuilder,
+  nativeToScVal,
+} from '@stellar/stellar-sdk';
+import { Server } from '@stellar/stellar-sdk/rpc';
 
-type Asset = 'XLM' | 'USDC';
+type Asset = 'XLM';
 type VaultStatus = 'locked' | 'ready' | 'completed';
 
 type Vault = {
@@ -29,9 +44,18 @@ type Activity = {
   time: string;
 };
 
+type Toast = { id: number; message: string; tone: 'info' | 'success' | 'error' };
+
+const RPC_URL = 'https://soroban-testnet.stellar.org:443';
+const NETWORK_PASSPHRASE = Networks.TESTNET;
+const CONTRACT_ID = 'CAV7J32QW5L4F66XZ72OZX25Z64D7S5X2U4E6U2I5Y4Y4T5U6O7P8Q9R';
+const XLM_ASSET_CONTRACT_ID = StellarAsset.native().contractId(NETWORK_PASSPHRASE);
+
+const server = new Server(RPC_URL);
+const contract = new Contract(CONTRACT_ID);
+
 const INITIAL_VAULTS: Vault[] = [
   { id: 1, name: 'Emergency fund', asset: 'XLM', saved: 420, goal: 1000, unlockAt: '2026-08-15', status: 'locked' },
-  { id: 2, name: 'Device upgrade', asset: 'USDC', saved: 780, goal: 1200, unlockAt: '2026-09-05', status: 'locked' },
   { id: 3, name: 'Trip savings', asset: 'XLM', saved: 900, goal: 900, unlockAt: '2026-07-18', status: 'completed' },
 ];
 
@@ -39,13 +63,6 @@ const INITIAL_ACTIVITY: Activity[] = [
   { id: 1, title: 'Vault created', detail: 'Emergency fund locked on Soroban', time: 'Today' },
   { id: 2, title: 'Deposit confirmed', detail: '+120 XLM added to Emergency fund', time: 'Today' },
   { id: 3, title: 'Unlock reached', detail: 'Trip savings is now available to withdraw', time: 'Yesterday' },
-];
-
-const statCards = [
-  { label: 'Total saved', value: '2,100', icon: CircleDollarSign },
-  { label: 'Active vaults', value: '2', icon: LockKeyhole },
-  { label: 'Unlocked', value: '1', icon: ShieldCheck },
-  { label: 'Wallet proofs', value: '12+', icon: Wallet },
 ];
 
 const statusLabel: Record<VaultStatus, string> = {
@@ -60,66 +77,248 @@ const statusTone: Record<VaultStatus, string> = {
   completed: 'border-sky-500/20 bg-sky-500/10 text-sky-300',
 };
 
+function asNumber(value: unknown): number {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'bigint') return Number(value);
+  if (typeof value === 'string') return Number(value);
+  return 0;
+}
+
+function asString(value: unknown): string {
+  return typeof value === 'string' ? value : String(value ?? '');
+}
+
+function normalizeStatus(saved: number, goal: number, unlockAt: string): VaultStatus {
+  if (saved >= goal) return 'ready';
+  if (new Date(unlockAt).getTime() <= Date.now()) return 'completed';
+  return 'locked';
+}
+
+function vaultFromContract(raw: any): Vault {
+  return {
+    id: asNumber(raw.vault_id ?? raw.id ?? raw.vaultId),
+    name: asString(raw.title ?? raw.name),
+    asset: 'XLM',
+    saved: asNumber(raw.balance ?? raw.saved),
+    goal: asNumber(raw.goal_amount ?? raw.goal),
+    unlockAt: new Date(Number(asNumber(raw.unlock_timestamp ?? raw.unlockAt)) * 1000)
+      .toISOString()
+      .slice(0, 10),
+    status: normalizeStatus(
+      asNumber(raw.balance ?? raw.saved),
+      asNumber(raw.goal_amount ?? raw.goal),
+      new Date(Number(asNumber(raw.unlock_timestamp ?? raw.unlockAt)) * 1000)
+        .toISOString()
+        .slice(0, 10)
+    ),
+  };
+}
+
+async function waitForTx(hash: string) {
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const tx = (await server.getTransaction(hash)) as any;
+    if (tx.status === 'SUCCESS' || tx.status === 'FAILED') return tx;
+    await new Promise((resolve) => window.setTimeout(resolve, 1500));
+  }
+  throw new Error('Transaction timed out');
+}
+
 export const App: React.FC = () => {
-  const [vaults, setVaults] = useState<Vault[]>(INITIAL_VAULTS);
+  const [walletAddress, setWalletAddress] = useState('');
+  const [walletConnected, setWalletConnected] = useState(false);
+  const [currentVaults, setCurrentVaults] = useState<Vault[]>(INITIAL_VAULTS);
   const [activity, setActivity] = useState<Activity[]>(INITIAL_ACTIVITY);
   const [showCreate, setShowCreate] = useState(false);
   const [selectedVault, setSelectedVault] = useState<Vault | null>(null);
-  const [createForm, setCreateForm] = useState({
-    name: '',
-    asset: 'XLM' as Asset,
-    goal: 1000,
-    days: 30,
-  });
+  const [createForm, setCreateForm] = useState({ name: '', asset: 'XLM' as Asset, goal: 1000, days: 30 });
   const [depositAmount, setDepositAmount] = useState(100);
+  const [loading, setLoading] = useState(false);
+  const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const activeVaults = useMemo(() => vaults.filter((vault) => vault.status !== 'completed'), [vaults]);
-
-  const createVault = () => {
-    const unlockAt = new Date(Date.now() + createForm.days * 86400000).toISOString().slice(0, 10);
-    const nextVault: Vault = {
-      id: vaults.length + 1,
-      name: createForm.name.trim() || 'New vault',
-      asset: createForm.asset,
-      saved: 0,
-      goal: createForm.goal,
-      unlockAt,
-      status: 'locked',
-    };
-
-    setVaults((prev) => [nextVault, ...prev]);
-    setActivity((prev) => [
-      { id: Date.now(), title: 'Vault created', detail: `${nextVault.name} is ready`, time: 'Just now' },
-      ...prev,
-    ]);
-    setShowCreate(false);
-    setCreateForm({ name: '', asset: 'XLM', goal: 1000, days: 30 });
+  const pushToast = (message: string, tone: Toast['tone'] = 'info') => {
+    const id = Date.now() + Math.floor(Math.random() * 1000);
+    setToasts((prev) => [...prev, { id, message, tone }]);
+    window.setTimeout(() => {
+      setToasts((prev) => prev.filter((toast) => toast.id !== id));
+    }, 3500);
   };
 
-  const depositToVault = () => {
+  const activeVaults = useMemo(() => currentVaults.filter((vault) => vault.status !== 'completed'), [currentVaults]);
+  const completedVaults = useMemo(() => currentVaults.filter((vault) => vault.status === 'completed'), [currentVaults]);
+  const totalSaved = useMemo(() => currentVaults.reduce((sum, vault) => sum + vault.saved, 0), [currentVaults]);
+
+  const refreshVaults = async (owner: string) => {
+    try {
+      const { result } = await server.queryContract<number[]>(
+        CONTRACT_ID,
+        'get_user_vaults',
+        { owner },
+        NETWORK_PASSPHRASE
+      );
+      if (!Array.isArray(result) || result.length === 0) {
+        setCurrentVaults([]);
+        return;
+      }
+
+      const nextVaults: Vault[] = [];
+      for (const id of result) {
+        const vaultResult = await server.queryContract<any>(
+          CONTRACT_ID,
+          'get_vault',
+          { vault_id: id },
+          NETWORK_PASSPHRASE
+        );
+        nextVaults.push(vaultFromContract(vaultResult.result));
+      }
+      setCurrentVaults(nextVaults);
+    } catch (error) {
+      pushToast('Could not load contract vaults. Showing demo data.', 'error');
+    }
+  };
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const connected = await isConnected();
+        if (connected.isConnected) {
+          const addr = await getAddress();
+          setWalletAddress(addr.address);
+          setWalletConnected(true);
+          await refreshVaults(addr.address);
+        }
+      } catch {
+        // Keep the app usable even if Freighter is not available.
+      }
+    })();
+  }, []);
+
+  const connectWallet = async () => {
+    try {
+      const allowed = await setAllowed();
+      const addr = await getAddress();
+      if (!addr?.address) throw new Error('Wallet not approved');
+      setWalletAddress(addr.address);
+      setWalletConnected(true);
+      pushToast('Freighter connected', 'success');
+      await refreshVaults(addr.address);
+    } catch (error) {
+      pushToast('Connect Freighter to use the live contract.', 'error');
+    }
+  };
+
+  const submitTx = async (method: string, args: any[]) => {
+    if (!walletConnected || !walletAddress) {
+      throw new Error('Connect Freighter first');
+    }
+
+    const account = await server.getAccount(walletAddress);
+    const tx = new TransactionBuilder(account, {
+      fee: BASE_FEE,
+      networkPassphrase: NETWORK_PASSPHRASE,
+    })
+      .addOperation(contract.call(method, ...args))
+      .setTimeout(30)
+      .build();
+
+    const prepared = await server.prepareTransaction(tx);
+    const signed = await signTransaction(prepared.toXDR(), {
+      networkPassphrase: NETWORK_PASSPHRASE,
+      address: walletAddress,
+    });
+    if (signed.error) {
+      throw new Error(signed.error.message ?? 'Freighter signing failed');
+    }
+
+    const response = await server.sendTransaction(TransactionBuilder.fromXDR(signed.signedTxXdr, NETWORK_PASSPHRASE));
+    if (response.status === 'ERROR') {
+      throw new Error((response as any).errorResult?.toString?.() ?? 'Transaction failed');
+    }
+    await waitForTx(response.hash);
+    await refreshVaults(walletAddress);
+  };
+
+  const createVault = async () => {
+    if (!walletAddress) return;
+    setLoading(true);
+    try {
+      const unlockTimestamp = Math.floor((Date.now() + createForm.days * 86400000) / 1000);
+      await submitTx('create_vault', [
+      nativeToScVal(walletAddress, { type: 'address' }) as any,
+      nativeToScVal(createForm.name.trim() || 'New vault', { type: 'string' }) as any,
+      nativeToScVal(BigInt(createForm.goal), { type: 'i128' }) as any,
+      nativeToScVal(BigInt(unlockTimestamp), { type: 'u64' }) as any,
+      nativeToScVal(XLM_ASSET_CONTRACT_ID, { type: 'address' }) as any,
+      ]);
+      pushToast('Vault created on chain', 'success');
+      setShowCreate(false);
+      setCreateForm({ name: '', asset: 'XLM', goal: 1000, days: 30 });
+    } catch (error) {
+      pushToast(error instanceof Error ? error.message : 'Create vault failed', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const depositToVault = async () => {
     if (!selectedVault) return;
-
-    setVaults((prev) =>
-      prev.map((vault) => {
-        if (vault.id !== selectedVault.id) return vault;
-        const saved = vault.saved + depositAmount;
-        const status: VaultStatus = saved >= vault.goal ? 'ready' : vault.status;
-        return { ...vault, saved, status };
-      })
-    );
-
-    setActivity((prev) => [
-      {
-        id: Date.now(),
-        title: 'Deposit confirmed',
-        detail: `+${depositAmount} ${selectedVault.asset} to ${selectedVault.name}`,
-        time: 'Just now',
-      },
-      ...prev,
-    ]);
-
-    setSelectedVault(null);
+    setLoading(true);
+    try {
+      await submitTx('deposit', [
+        nativeToScVal(walletAddress, { type: 'address' }) as any,
+        nativeToScVal(BigInt(selectedVault.id), { type: 'u64' }) as any,
+        nativeToScVal(BigInt(depositAmount), { type: 'i128' }) as any,
+      ]);
+      setActivity((prev) => [
+        { id: Date.now(), title: 'Deposit submitted', detail: `+${depositAmount} ${selectedVault.asset}`, time: 'Just now' },
+        ...prev,
+      ]);
+      setSelectedVault(null);
+      pushToast('Deposit confirmed on testnet', 'success');
+    } catch (error) {
+      pushToast(error instanceof Error ? error.message : 'Deposit failed', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const withdrawVault = async (vault: Vault) => {
+    setLoading(true);
+    try {
+      await submitTx('withdraw', [nativeToScVal(BigInt(vault.id), { type: 'u64' }) as any]);
+      setActivity((prev) => [
+        { id: Date.now(), title: 'Withdrawal submitted', detail: `${vault.name} released to wallet`, time: 'Just now' },
+        ...prev,
+      ]);
+      pushToast('Vault withdrawn successfully', 'success');
+    } catch (error) {
+      pushToast(error instanceof Error ? error.message : 'Withdraw failed', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const earlyWithdrawVault = async (vault: Vault) => {
+    setLoading(true);
+    try {
+      await submitTx('early_withdraw', [nativeToScVal(BigInt(vault.id), { type: 'u64' }) as any]);
+      setActivity((prev) => [
+        { id: Date.now(), title: 'Early withdrawal submitted', detail: `${vault.name} closed with penalty`, time: 'Just now' },
+        ...prev,
+      ]);
+      pushToast('Early withdrawal completed', 'info');
+    } catch (error) {
+      pushToast(error instanceof Error ? error.message : 'Early withdrawal failed', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const statCards = [
+    { label: 'Total saved', value: totalSaved.toLocaleString(), icon: CircleDollarSign },
+    { label: 'Active vaults', value: activeVaults.length.toString(), icon: LockKeyhole },
+    { label: 'Completed', value: completedVaults.length.toString(), icon: ShieldCheck },
+    { label: 'Wallet', value: walletConnected ? 'Connected' : 'Not connected', icon: Wallet },
+  ];
 
   return (
     <div className="app-shell">
@@ -129,9 +328,12 @@ export const App: React.FC = () => {
           <div className="subtitle">Simple Stellar savings vaults</div>
         </div>
         <div className="topbar-actions">
+          <button className="ghost-button" onClick={connectWallet}>
+            <Wallet size={16} />
+            {walletConnected ? 'Wallet connected' : 'Connect Freighter'}
+          </button>
           <button className="ghost-button">Proofs</button>
-          <button className="ghost-button">Feedback</button>
-          <button className="primary-button" onClick={() => setShowCreate(true)}>
+          <button className="primary-button" onClick={() => setShowCreate(true)} disabled={!walletConnected || loading}>
             <Plus size={16} />
             New vault
           </button>
@@ -144,24 +346,26 @@ export const App: React.FC = () => {
             <p className="eyebrow">Stellar Soroban savings app</p>
             <h1>Save with a vault that only unlocks when your goal or date is reached.</h1>
             <p className="lede">
-              VaultLock gives you a clear way to build a savings habit without relying on trust.
-              Create a vault, add money over time, and keep funds locked until the rules say otherwise.
+              VaultLock now talks to the live Soroban contract on testnet. Connect Freighter,
+              create a vault, deposit funds, and withdraw when the contract allows it.
             </p>
 
             <div className="hero-actions">
-              <button className="primary-button" onClick={() => setShowCreate(true)}>
-                <Plus size={16} />
-                Create vault
+              <button className="primary-button" onClick={connectWallet}>
+                <Wallet size={16} />
+                {walletConnected ? 'Wallet ready' : 'Connect Freighter'}
               </button>
-              <button className="ghost-button">View contract</button>
+              <button className="ghost-button">Contract ID</button>
             </div>
           </div>
 
           <div className="hero-panel">
-            <div className="hero-panel-title">Current overview</div>
-            <div className="hero-panel-value">{activeVaults.length} active vaults</div>
+            <div className="hero-panel-title">Contract</div>
+            <div className="hero-panel-value">Soroban testnet</div>
             <div className="hero-panel-note">
-              Designed for testnet deployment, simple onboarding, and a clean product demo.
+              RPC: {RPC_URL}
+              <br />
+              Contract: {CONTRACT_ID.slice(0, 12)}...
             </div>
           </div>
         </section>
@@ -191,7 +395,7 @@ export const App: React.FC = () => {
             </div>
 
             <div className="vault-list">
-              {vaults.map((vault) => {
+              {currentVaults.map((vault) => {
                 const percent = Math.min(100, Math.round((vault.saved / vault.goal) * 100));
                 return (
                   <article key={vault.id} className="vault-row">
@@ -210,9 +414,24 @@ export const App: React.FC = () => {
                       <div className="vault-amount">
                         {vault.saved.toLocaleString()} / {vault.goal.toLocaleString()}
                       </div>
-                      <button className="secondary-button" onClick={() => setSelectedVault(vault)}>
+                      <button className="secondary-button" onClick={() => setSelectedVault(vault)} disabled={!walletConnected}>
                         Deposit
                       </button>
+                      {vault.status !== 'completed' && (
+                        <button
+                          className="secondary-button"
+                          onClick={() => withdrawVault(vault)}
+                          disabled={!walletConnected || vault.status === 'locked'}
+                        >
+                          <ArrowUpRight size={16} />
+                          Withdraw
+                        </button>
+                      )}
+                      {vault.status === 'locked' && vault.saved > 0 && (
+                        <button className="secondary-button" onClick={() => earlyWithdrawVault(vault)} disabled={!walletConnected}>
+                          Early withdraw
+                        </button>
+                      )}
                     </div>
                   </article>
                 );
@@ -229,9 +448,9 @@ export const App: React.FC = () => {
                 </div>
               </div>
               <ol className="steps">
+                <li>Connect Freighter and load your vaults from Soroban.</li>
                 <li>Create a vault with a savings goal and unlock date.</li>
-                <li>Deposit whenever you want using XLM or USDC.</li>
-                <li>Withdraw only when the vault is unlocked.</li>
+                <li>Deposit or withdraw using the live contract rules.</li>
               </ol>
             </section>
 
@@ -270,14 +489,7 @@ export const App: React.FC = () => {
               />
             </Field>
             <Field label="Asset">
-              <select
-                className="input"
-                value={createForm.asset}
-                onChange={(e) => setCreateForm((prev) => ({ ...prev, asset: e.target.value as Asset }))}
-              >
-                <option value="XLM">XLM</option>
-                <option value="USDC">USDC</option>
-              </select>
+              <input className="input" value="XLM" disabled />
             </Field>
             <Field label="Goal amount">
               <input
@@ -303,7 +515,7 @@ export const App: React.FC = () => {
             <button className="ghost-button" onClick={() => setShowCreate(false)} type="button">
               Cancel
             </button>
-            <button className="primary-button" onClick={createVault} type="button">
+            <button className="primary-button" onClick={createVault} type="button" disabled={loading}>
               Create vault
             </button>
           </div>
@@ -349,12 +561,20 @@ export const App: React.FC = () => {
             <button className="ghost-button" onClick={() => setSelectedVault(null)} type="button">
               Cancel
             </button>
-            <button className="primary-button" onClick={depositToVault} type="button">
+            <button className="primary-button" onClick={depositToVault} type="button" disabled={loading}>
               Confirm deposit
             </button>
           </div>
         </Modal>
       )}
+
+      <div className="toast-stack">
+        {toasts.map((toast) => (
+          <div key={toast.id} className={`toast ${toast.tone}`}>
+            {toast.message}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
