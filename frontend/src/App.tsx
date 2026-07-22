@@ -1,333 +1,393 @@
 import React, { useMemo, useState } from 'react';
 import {
-  Wallet,
+  ArrowUpRight,
   CalendarDays,
-  Target,
-  CheckCircle2,
-  Clock3,
-  Users,
+  CircleDollarSign,
+  LockKeyhole,
+  Plus,
+  ShieldCheck,
+  Wallet,
 } from 'lucide-react';
-import { Navbar } from './components/Navbar';
-import { DashboardStats } from './components/DashboardStats';
-import { VaultGrid } from './components/VaultGrid';
-import { CreateVaultModal } from './components/CreateVaultModal';
-import { DepositModal } from './components/DepositModal';
-import { EarlyWithdrawModal } from './components/EarlyWithdrawModal';
-import { ToastContainer } from './components/ToastContainer';
-import { Vault, SimulationState, CreateVaultInput, ToastNotification } from './types/vault';
 
-const now = () => Math.floor(Date.now() / 1000);
+type Asset = 'XLM' | 'USDC';
+type VaultStatus = 'locked' | 'ready' | 'completed';
+
+type Vault = {
+  id: number;
+  name: string;
+  asset: Asset;
+  saved: number;
+  goal: number;
+  unlockAt: string;
+  status: VaultStatus;
+};
+
+type Activity = {
+  id: number;
+  title: string;
+  detail: string;
+  time: string;
+};
 
 const INITIAL_VAULTS: Vault[] = [
-  {
-    id: 1,
-    title: 'Emergency Fund',
-    balance: 420,
-    goalAmount: 1000,
-    unlockTimestamp: now() + 86400 * 21,
-    assetSymbol: 'XLM',
-    isActive: true,
-    category: 'emergency',
-  },
-  {
-    id: 2,
-    title: 'Laptop Upgrade',
-    balance: 250,
-    goalAmount: 1200,
-    unlockTimestamp: now() + 86400 * 45,
-    assetSymbol: 'USDC',
-    isActive: true,
-    category: 'hardware',
-  },
-  {
-    id: 3,
-    title: 'Trip to Goa',
-    balance: 900,
-    goalAmount: 900,
-    unlockTimestamp: now() - 86400 * 2,
-    assetSymbol: 'XLM',
-    isActive: false,
-    category: 'vacation',
-  },
+  { id: 1, name: 'Emergency fund', asset: 'XLM', saved: 420, goal: 1000, unlockAt: '2026-08-15', status: 'locked' },
+  { id: 2, name: 'Device upgrade', asset: 'USDC', saved: 780, goal: 1200, unlockAt: '2026-09-05', status: 'locked' },
+  { id: 3, name: 'Trip savings', asset: 'XLM', saved: 900, goal: 900, unlockAt: '2026-07-18', status: 'completed' },
 ];
 
-const initialProofs = 12;
-const initialFeedback = 10;
+const INITIAL_ACTIVITY: Activity[] = [
+  { id: 1, title: 'Vault created', detail: 'Emergency fund locked on Soroban', time: 'Today' },
+  { id: 2, title: 'Deposit confirmed', detail: '+120 XLM added to Emergency fund', time: 'Today' },
+  { id: 3, title: 'Unlock reached', detail: 'Trip savings is now available to withdraw', time: 'Yesterday' },
+];
+
+const statCards = [
+  { label: 'Total saved', value: '2,100', icon: CircleDollarSign },
+  { label: 'Active vaults', value: '2', icon: LockKeyhole },
+  { label: 'Unlocked', value: '1', icon: ShieldCheck },
+  { label: 'Wallet proofs', value: '12+', icon: Wallet },
+];
+
+const statusLabel: Record<VaultStatus, string> = {
+  locked: 'Locked',
+  ready: 'Ready',
+  completed: 'Completed',
+};
+
+const statusTone: Record<VaultStatus, string> = {
+  locked: 'border-white/10 bg-white/5 text-[#d7deee]',
+  ready: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300',
+  completed: 'border-sky-500/20 bg-sky-500/10 text-sky-300',
+};
 
 export const App: React.FC = () => {
   const [vaults, setVaults] = useState<Vault[]>(INITIAL_VAULTS);
-  const [simState, setSimState] = useState<SimulationState>({
-    currentTimestamp: now(),
-    totalSaved: INITIAL_VAULTS.reduce((sum, vault) => sum + vault.balance, 0),
-    penaltiesCollected: 18,
-    judgeMode: true,
-    walletConnected: true,
-    walletAddress: 'GCVX...9Q2L',
+  const [activity, setActivity] = useState<Activity[]>(INITIAL_ACTIVITY);
+  const [showCreate, setShowCreate] = useState(false);
+  const [selectedVault, setSelectedVault] = useState<Vault | null>(null);
+  const [createForm, setCreateForm] = useState({
+    name: '',
+    asset: 'XLM' as Asset,
+    goal: 1000,
+    days: 30,
   });
-  const [toasts, setToasts] = useState<ToastNotification[]>([]);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [selectedDepositVault, setSelectedDepositVault] = useState<Vault | null>(null);
-  const [selectedEarlyWdVault, setSelectedEarlyWdVault] = useState<Vault | null>(null);
+  const [depositAmount, setDepositAmount] = useState(100);
 
-  const addToast = (message: string, type: ToastNotification['type'], detail?: string, duration = 3200) => {
-    const id = Math.random().toString(36).slice(2, 9);
-    setToasts((prev) => [...prev, { id, message, type, detail, duration }]);
-    if (duration > 0 && type !== 'loading') {
-      window.setTimeout(() => {
-        setToasts((prev) => prev.filter((toast) => toast.id !== id));
-      }, duration);
-    }
-    return id;
+  const activeVaults = useMemo(() => vaults.filter((vault) => vault.status !== 'completed'), [vaults]);
+
+  const createVault = () => {
+    const unlockAt = new Date(Date.now() + createForm.days * 86400000).toISOString().slice(0, 10);
+    const nextVault: Vault = {
+      id: vaults.length + 1,
+      name: createForm.name.trim() || 'New vault',
+      asset: createForm.asset,
+      saved: 0,
+      goal: createForm.goal,
+      unlockAt,
+      status: 'locked',
+    };
+
+    setVaults((prev) => [nextVault, ...prev]);
+    setActivity((prev) => [
+      { id: Date.now(), title: 'Vault created', detail: `${nextVault.name} is ready`, time: 'Just now' },
+      ...prev,
+    ]);
+    setShowCreate(false);
+    setCreateForm({ name: '', asset: 'XLM', goal: 1000, days: 30 });
   };
 
-  const removeToast = (id: string) => {
-    setToasts((prev) => prev.filter((toast) => toast.id !== id));
-  };
+  const depositToVault = () => {
+    if (!selectedVault) return;
 
-  const activeVaults = vaults.filter((vault) => vault.isActive);
-  const completedVaults = vaults.filter((vault) => !vault.isActive);
+    setVaults((prev) =>
+      prev.map((vault) => {
+        if (vault.id !== selectedVault.id) return vault;
+        const saved = vault.saved + depositAmount;
+        const status: VaultStatus = saved >= vault.goal ? 'ready' : vault.status;
+        return { ...vault, saved, status };
+      })
+    );
 
-  const analyticsSummary = useMemo(
-    () => ({
-      users: 10,
-      proofs: initialProofs + vaults.length,
-      feedback: initialFeedback + 1,
-    }),
-    [vaults.length]
-  );
+    setActivity((prev) => [
+      {
+        id: Date.now(),
+        title: 'Deposit confirmed',
+        detail: `+${depositAmount} ${selectedVault.asset} to ${selectedVault.name}`,
+        time: 'Just now',
+      },
+      ...prev,
+    ]);
 
-  const addVault = (input: CreateVaultInput) => {
-    const loadingId = addToast('Creating your vault on Soroban...', 'loading');
-    window.setTimeout(() => {
-      removeToast(loadingId);
-      const id = vaults.length ? Math.max(...vaults.map((vault) => vault.id)) + 1 : 1;
-      const newVault: Vault = {
-        id,
-        title: input.title,
-        balance: 0,
-        goalAmount: input.goalAmount,
-        unlockTimestamp: simState.currentTimestamp + input.unlockDays * 86400,
-        assetSymbol: input.assetSymbol,
-        isActive: true,
-        category: input.category,
-      };
-
-      setVaults((prev) => [newVault, ...prev]);
-      addToast('Vault created. You can start depositing now.', 'success');
-    }, 500);
-  };
-
-  const deposit = (vault: Vault, amount: number) => {
-    const loadingId = addToast(`Submitting deposit of ${amount} ${vault.assetSymbol}...`, 'loading');
-    window.setTimeout(() => {
-      removeToast(loadingId);
-      setVaults((prev) =>
-        prev.map((item) => (item.id === vault.id ? { ...item, balance: item.balance + amount } : item))
-      );
-      setSimState((prev) => ({ ...prev, totalSaved: prev.totalSaved + amount }));
-      addToast('Deposit confirmed.', 'success');
-    }, 500);
-  };
-
-  const withdraw = (vault: Vault) => {
-    const loadingId = addToast('Checking unlock rules...', 'loading');
-    window.setTimeout(() => {
-      removeToast(loadingId);
-      setVaults((prev) =>
-        prev.map((item) => (item.id === vault.id ? { ...item, balance: 0, isActive: false } : item))
-      );
-      setSimState((prev) => ({ ...prev, totalSaved: Math.max(0, prev.totalSaved - vault.balance) }));
-      addToast('Funds released to your wallet.', 'success');
-    }, 500);
-  };
-
-  const earlyWithdraw = (vault: Vault) => {
-    const loadingId = addToast('Calculating penalty...', 'loading');
-    window.setTimeout(() => {
-      removeToast(loadingId);
-      const penalty = Math.round(vault.balance * 0.05 * 10) / 10;
-      setVaults((prev) =>
-        prev.map((item) => (item.id === vault.id ? { ...item, balance: 0, isActive: false } : item))
-      );
-      setSimState((prev) => ({
-        ...prev,
-        totalSaved: Math.max(0, prev.totalSaved - vault.balance),
-        penaltiesCollected: prev.penaltiesCollected + penalty,
-      }));
-      addToast(`Early withdrawal completed. ${penalty} ${vault.assetSymbol} sent as penalty.`, 'info');
-    }, 500);
-  };
-
-  const advanceTime = (days: number) => {
-    setSimState((prev) => ({ ...prev, currentTimestamp: prev.currentTimestamp + days * 86400 }));
-    addToast(`Ledger advanced by ${days} days.`, 'info');
-  };
-
-  const resetTime = () => {
-    setSimState((prev) => ({ ...prev, currentTimestamp: now() }));
-    addToast('Ledger time reset.', 'info');
+    setSelectedVault(null);
   };
 
   return (
-    <div className="min-h-screen">
-      <Navbar
-        state={simState}
-        onToggleWallet={() =>
-          setSimState((prev) => ({
-            ...prev,
-            walletConnected: !prev.walletConnected,
-            walletAddress: prev.walletConnected ? '' : 'GCVX...9Q2L',
-          }))
-        }
-        onToggleJudgeMode={() => setSimState((prev) => ({ ...prev, judgeMode: !prev.judgeMode }))}
-        onOpenCreateModal={() => setIsCreateOpen(true)}
-        onOpenAnalytics={() => addToast('Proofs and feedback are shown in the dashboard below.', 'info')}
-        onOpenFeedback={() => addToast('Feedback summary is tracked in the dashboard below.', 'info')}
-      />
+    <div className="app-shell">
+      <header className="topbar">
+        <div>
+          <div className="brand">VaultLock</div>
+          <div className="subtitle">Simple Stellar savings vaults</div>
+        </div>
+        <div className="topbar-actions">
+          <button className="ghost-button">Proofs</button>
+          <button className="ghost-button">Feedback</button>
+          <button className="primary-button" onClick={() => setShowCreate(true)}>
+            <Plus size={16} />
+            New vault
+          </button>
+        </div>
+      </header>
 
-      <main className="mx-auto max-w-7xl px-4 pb-16 pt-8 md:px-8">
-        <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="glass-panel p-6 md:p-8">
-            <h2 className="max-w-2xl text-3xl font-semibold tracking-tight text-white md:text-4xl">
-              Save money in a vault that only unlocks on the date or goal you set.
-            </h2>
-            <p className="mt-4 max-w-2xl text-sm leading-6 text-[#a8b3cf] md:text-base">
-              VaultLock is a simple Stellar app for personal savings. Create one vault, deposit over time, and withdraw when the lock conditions are met.
+      <main className="page">
+        <section className="hero card">
+          <div className="hero-copy">
+            <p className="eyebrow">Stellar Soroban savings app</p>
+            <h1>Save with a vault that only unlocks when your goal or date is reached.</h1>
+            <p className="lede">
+              VaultLock gives you a clear way to build a savings habit without relying on trust.
+              Create a vault, add money over time, and keep funds locked until the rules say otherwise.
             </p>
 
-            <div className="mt-6 flex flex-wrap gap-3">
-              <button className="btn btn-primary" onClick={() => setIsCreateOpen(true)}>
-                <Wallet className="h-4 w-4" />
-                New vault
+            <div className="hero-actions">
+              <button className="primary-button" onClick={() => setShowCreate(true)}>
+                <Plus size={16} />
+                Create vault
               </button>
-              <button className="btn btn-secondary" onClick={() => advanceTime(7)}>
-                <CalendarDays className="h-4 w-4" />
-                +7 days
-              </button>
-              <button className="btn btn-secondary" onClick={resetTime}>
-                <Clock3 className="h-4 w-4" />
-                Reset time
-              </button>
+              <button className="ghost-button">View contract</button>
             </div>
+          </div>
 
-            <div className="mt-8 grid gap-3 sm:grid-cols-3">
-              {[
-                { label: 'Active vaults', value: activeVaults.length, icon: <Target className="h-4 w-4" /> },
-                { label: 'Completed vaults', value: completedVaults.length, icon: <CheckCircle2 className="h-4 w-4" /> },
-                { label: 'Wallet proofs', value: analyticsSummary.proofs, icon: <Users className="h-4 w-4" /> },
-              ].map((item) => (
-                <div key={item.label} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <div className="flex items-center justify-between text-xs text-[#a8b3cf]">
-                    <span>{item.label}</span>
-                    <span className="text-[#00f2fe]">{item.icon}</span>
-                  </div>
-                  <div className="mt-2 text-2xl font-bold text-white">{item.value}</div>
+          <div className="hero-panel">
+            <div className="hero-panel-title">Current overview</div>
+            <div className="hero-panel-value">{activeVaults.length} active vaults</div>
+            <div className="hero-panel-note">
+              Designed for testnet deployment, simple onboarding, and a clean product demo.
+            </div>
+          </div>
+        </section>
+
+        <section className="stats-grid">
+          {statCards.map((card) => {
+            const Icon = card.icon;
+            return (
+              <article key={card.label} className="card stat-card">
+                <div className="stat-label">
+                  <span>{card.label}</span>
+                  <Icon size={16} />
                 </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="glass-panel p-6 md:p-8">
-            <h3 className="text-lg font-semibold text-white">How it works</h3>
-            <div className="mt-5 space-y-4">
-              {[
-                'Create a vault with a goal amount and unlock date.',
-                'Deposit whenever you want, using XLM or USDC.',
-                'Withdraw only when time or goal conditions are satisfied.',
-              ].map((step, index) => (
-                <div key={step} className="flex gap-3 rounded-xl border border-white/10 bg-white/5 p-4">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-black/20 text-sm font-semibold text-white">
-                    {index + 1}
-                  </div>
-                  <p className="text-sm leading-6 text-[#d7deee]">{step}</p>
-                </div>
-              ))}
-            </div>
-          </div>
+                <div className="stat-value">{card.value}</div>
+              </article>
+            );
+          })}
         </section>
 
-        <section className="mt-8">
-          <DashboardStats
-            vaults={vaults}
-            totalSaved={simState.totalSaved}
-            penaltiesCollected={simState.penaltiesCollected}
-          />
-        </section>
-
-        <section className="mt-8 rounded-3xl border border-white/10 bg-black/20 p-5 md:p-6">
-          <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-            <div>
-              <h3 className="text-xl font-semibold text-white">Vaults</h3>
-              <p className="text-sm text-[#a8b3cf]">A clean view of each savings goal, unlock status, and withdraw action.</p>
-            </div>
-            <div className="text-sm text-[#a8b3cf]">
-              {simState.walletConnected ? `Wallet ${simState.walletAddress || 'connected'}` : 'Wallet disconnected'}
-            </div>
-          </div>
-
-          <div className="mt-5">
-            <VaultGrid
-              vaults={vaults}
-              currentTimestamp={simState.currentTimestamp}
-              onDeposit={(vault) => setSelectedDepositVault(vault)}
-              onWithdraw={withdraw}
-              onEarlyWithdraw={(vault) => setSelectedEarlyWdVault(vault)}
-            />
-          </div>
-        </section>
-
-        <section className="mt-8 grid gap-6 lg:grid-cols-2">
-          <div className="glass-panel p-6">
-            <h3 className="text-lg font-semibold text-white">User validation</h3>
-            <p className="mt-2 text-sm text-[#a8b3cf]">
-              Add real wallet interactions and feedback from your testers before submission. This demo area keeps the structure ready for evidence collection.
-            </p>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <div className="text-xs text-[#a8b3cf]">Target wallet proofs</div>
-                <div className="mt-1 text-2xl font-bold text-white">10+</div>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <div className="text-xs text-[#a8b3cf]">Feedback entries</div>
-                <div className="mt-1 text-2xl font-bold text-white">{analyticsSummary.feedback}</div>
+        <section className="content-grid">
+          <section className="card">
+            <div className="section-header">
+              <div>
+                <h2>Your vaults</h2>
+                <p>Each vault keeps a goal, a lock date, and a simple status.</p>
               </div>
             </div>
-          </div>
 
-          <div className="glass-panel p-6">
-            <h3 className="text-lg font-semibold text-white">Submission notes</h3>
-            <p className="mt-2 text-sm leading-6 text-[#a8b3cf]">
-              The contract is already structured for time-locked or goal-locked withdrawals. For a real submission, connect the frontend to your deployed testnet contract, add actual user proof, and replace any demo counts with verified values.
-            </p>
-            <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-[#d7deee]">
-              Keep the UI simple, mobile friendly, and easy to demo.
+            <div className="vault-list">
+              {vaults.map((vault) => {
+                const percent = Math.min(100, Math.round((vault.saved / vault.goal) * 100));
+                return (
+                  <article key={vault.id} className="vault-row">
+                    <div className="vault-main">
+                      <div className="vault-name">{vault.name}</div>
+                      <div className="vault-meta">
+                        {vault.asset} · unlocks {vault.unlockAt}
+                      </div>
+                      <div className="progress">
+                        <div className="progress-bar" style={{ width: `${percent}%` }} />
+                      </div>
+                    </div>
+
+                    <div className="vault-side">
+                      <span className={`status-pill ${statusTone[vault.status]}`}>{statusLabel[vault.status]}</span>
+                      <div className="vault-amount">
+                        {vault.saved.toLocaleString()} / {vault.goal.toLocaleString()}
+                      </div>
+                      <button className="secondary-button" onClick={() => setSelectedVault(vault)}>
+                        Deposit
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
             </div>
-          </div>
+          </section>
+
+          <aside className="side-column">
+            <section className="card">
+              <div className="section-header">
+                <div>
+                  <h2>How it works</h2>
+                  <p>Keep the product simple for first-time users.</p>
+                </div>
+              </div>
+              <ol className="steps">
+                <li>Create a vault with a savings goal and unlock date.</li>
+                <li>Deposit whenever you want using XLM or USDC.</li>
+                <li>Withdraw only when the vault is unlocked.</li>
+              </ol>
+            </section>
+
+            <section className="card">
+              <div className="section-header">
+                <div>
+                  <h2>Recent activity</h2>
+                  <p>Small proof log for the demo and onboarding story.</p>
+                </div>
+              </div>
+              <div className="activity-list">
+                {activity.map((item) => (
+                  <div key={item.id} className="activity-item">
+                    <div>
+                      <div className="activity-title">{item.title}</div>
+                      <div className="activity-detail">{item.detail}</div>
+                    </div>
+                    <div className="activity-time">{item.time}</div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </aside>
         </section>
       </main>
 
-      <CreateVaultModal
-        isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
-        onSubmit={addVault}
-      />
-      <DepositModal
-        isOpen={Boolean(selectedDepositVault)}
-        vault={selectedDepositVault}
-        onClose={() => setSelectedDepositVault(null)}
-        onSubmit={(vault, amount) => {
-          deposit(vault, amount);
-        }}
-      />
-      <EarlyWithdrawModal
-        isOpen={Boolean(selectedEarlyWdVault)}
-        vault={selectedEarlyWdVault}
-        onClose={() => setSelectedEarlyWdVault(null)}
-        onConfirm={(vault) => {
-          earlyWithdraw(vault);
-        }}
-      />
-      <ToastContainer toasts={toasts} onDismiss={(id) => removeToast(id)} />
+      {showCreate && (
+        <Modal title="Create vault" onClose={() => setShowCreate(false)}>
+          <div className="form-grid">
+            <Field label="Vault name">
+              <input
+                className="input"
+                value={createForm.name}
+                onChange={(e) => setCreateForm((prev) => ({ ...prev, name: e.target.value }))}
+                placeholder="Emergency fund"
+              />
+            </Field>
+            <Field label="Asset">
+              <select
+                className="input"
+                value={createForm.asset}
+                onChange={(e) => setCreateForm((prev) => ({ ...prev, asset: e.target.value as Asset }))}
+              >
+                <option value="XLM">XLM</option>
+                <option value="USDC">USDC</option>
+              </select>
+            </Field>
+            <Field label="Goal amount">
+              <input
+                className="input"
+                type="number"
+                min={1}
+                value={createForm.goal}
+                onChange={(e) => setCreateForm((prev) => ({ ...prev, goal: Number(e.target.value) }))}
+              />
+            </Field>
+            <Field label="Unlock in days">
+              <input
+                className="input"
+                type="number"
+                min={1}
+                value={createForm.days}
+                onChange={(e) => setCreateForm((prev) => ({ ...prev, days: Number(e.target.value) }))}
+              />
+            </Field>
+          </div>
+
+          <div className="modal-actions">
+            <button className="ghost-button" onClick={() => setShowCreate(false)} type="button">
+              Cancel
+            </button>
+            <button className="primary-button" onClick={createVault} type="button">
+              Create vault
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {selectedVault && (
+        <Modal title={`Deposit to ${selectedVault.name}`} onClose={() => setSelectedVault(null)}>
+          <div className="deposit-summary">
+            <div>
+              <div className="summary-label">Current balance</div>
+              <div className="summary-value">
+                {selectedVault.saved.toLocaleString()} {selectedVault.asset}
+              </div>
+            </div>
+            <div>
+              <div className="summary-label">Goal</div>
+              <div className="summary-value">
+                {selectedVault.goal.toLocaleString()} {selectedVault.asset}
+              </div>
+            </div>
+          </div>
+
+          <Field label="Deposit amount">
+            <input
+              className="input"
+              type="number"
+              min={1}
+              value={depositAmount}
+              onChange={(e) => setDepositAmount(Number(e.target.value))}
+            />
+          </Field>
+
+          <div className="quick-amounts">
+            {[25, 50, 100, 250].map((value) => (
+              <button key={value} className="chip" type="button" onClick={() => setDepositAmount(value)}>
+                {value}
+              </button>
+            ))}
+          </div>
+
+          <div className="modal-actions">
+            <button className="ghost-button" onClick={() => setSelectedVault(null)} type="button">
+              Cancel
+            </button>
+            <button className="primary-button" onClick={depositToVault} type="button">
+              Confirm deposit
+            </button>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };
+
+function Modal({
+  title,
+  onClose,
+  children,
+}: {
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="overlay" role="dialog" aria-modal="true">
+      <div className="modal card">
+        <div className="modal-header">
+          <h3>{title}</h3>
+          <button className="icon-button" onClick={onClose} type="button" aria-label="Close modal">
+            ×
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="field">
+      <span>{label}</span>
+      {children}
+    </label>
+  );
+}
