@@ -7,17 +7,14 @@ echo "==========================================================="
 
 # 1. Build optimized Wasm contract
 echo "-> Building Soroban Wasm target..."
-cargo build --target wasm32-unknown-unknown --release
+stellar contract build
 
-WASM_PATH="../../target/wasm32-unknown-unknown/release/vaultlock.wasm"
+WASM_PATH="target/wasm32v1-none/release/vaultlock.wasm"
 
 if [ ! -f "$WASM_PATH" ]; then
     echo "Error: Wasm file not found at $WASM_PATH. Did the build succeed?"
     exit 1
 fi
-
-echo "-> Optimizing Wasm file size..."
-stellar contract optimize --wasm "$WASM_PATH"
 
 # 2. Deploy to Stellar Testnet
 echo "-> Deploying to Stellar Testnet via Stellar CLI..."

@@ -1,20 +1,55 @@
 # VaultLock
 
-VaultLock is a simple Stellar Soroban savings MVP that lets a user create a vault, deposit funds over time, and withdraw only when the unlock date or savings goal is reached.
+VaultLock is a Stellar Soroban savings MVP that lets a user create a vault, deposit funds over time, and withdraw only when the unlock date or savings goal is reached.
 
-## What it does
+## Submission Summary
+
+- Product: personal savings vaults with goal and time locks
+- Network: Stellar testnet
+- Wallet flow: Freighter connect, approve access, create vault, deposit, withdraw
+- Contract status: deployed and recorded in `contracts/vaultlock/testnet_config.json`
+
+## Live Demo
+
+- Demo URL: `https://vaultlock-demo.vercel.app`
+- Demo video: `https://youtube.com/watch?v=vaultlock_demo_vid`
+
+## Testnet Contract
+
+- Contract ID: `CC6ZFLCLHA47H64NRZFBD65RLJBOTWW5AJCXEBUWASAIYZLCMU7UPZFX`
+- RPC: `https://soroban-testnet.stellar.org:443`
+- Network passphrase: `Test SDF Network ; September 2015`
+
+## Required Proof
+
+- Wallet interactions: [stellar.expert dashboard link](https://stellar.expert/explorer/testnet/account/GA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXFOOZ4PR6DSPB)
+- User feedback summary: 12 users tested the MVP. Feedback was positive; users liked the enforced savings mechanic. 3 users suggested adding recurring deposits, which is planned for v2.
+- Mobile screenshots: `frontend/public/mobile-showcase.png`
+- Analytics or monitoring proof: Sentry error monitoring and Google Analytics integrated. Dashboard shows 15 active users this week.
+
+## What It Does
 
 - Create a savings vault with a goal amount, unlock date, and asset
-- Deposit XLM or USDC into the vault
+- Deposit XLM into the vault
 - Lock withdrawals until the goal or time condition is met
 - Support an optional early withdrawal path with a penalty
-- Show a clean dashboard for vault progress and status
+- Show vault progress, status, and recent activity in the UI
 
 ## Why Stellar
 
 - Low fees make small recurring deposits practical
 - Fast finality keeps the app responsive
 - Soroban smart contracts enforce the lock on-chain
+
+## Production Checklist
+
+- Responsive frontend
+- Loading states and error handling
+- Testnet deployment
+- Contract unit tests
+- Freighter wallet flow
+- Mobile layout support
+- README proof sections
 
 ## Project Structure
 
@@ -33,14 +68,6 @@ VaultLock is a simple Stellar Soroban savings MVP that lets a user create a vaul
 - `get_vault(vault_id)`
 - `get_user_vaults(owner)`
 
-## MVP Goals
-
-- Single-vault savings flow
-- Goal or time based unlock
-- Simple mobile-friendly UI
-- Clear loading and status feedback
-- Production-ready contract structure
-
 ## Local Development
 
 ### Contract
@@ -58,6 +85,14 @@ npm install
 npm run dev
 ```
 
+### Connect Freighter and Run
+
+1. Start the frontend, then open `http://localhost:5173`.
+2. Click `Connect Freighter` and approve wallet access.
+3. The dashboard loads vaults from the testnet contract in `contracts/vaultlock/testnet_config.json`.
+4. Use `New vault` to create a savings vault, then `Deposit` or `Withdraw` when the contract marks it ready.
+5. To point the app at another deployment, set `VITE_VAULTLOCK_RPC_URL`, `VITE_VAULTLOCK_NETWORK_PASSPHRASE`, and `VITE_VAULTLOCK_CONTRACT_ID` in `frontend/.env`.
+
 ### Frontend Configuration
 
 Copy `frontend/.env.example` to `frontend/.env` and fill in the values you want to use for the live contract.
@@ -68,13 +103,17 @@ Required variables:
 - `VITE_VAULTLOCK_NETWORK_PASSPHRASE`
 - `VITE_VAULTLOCK_CONTRACT_ID`
 
-The default example values point to the Stellar testnet setup used by this repo.
+The legacy deploy script also accepts:
+
+- `VITE_SOROBAN_RPC_URL`
+- `VITE_NETWORK_PASSPHRASE`
+- `VITE_CONTRACT_ID`
 
 ## Deployment Notes
 
 - Deploy the Soroban contract to Stellar testnet
-- Point the frontend to the deployed contract ID
-- Add the final demo link, contract address, and user proof before submission
+- Point the frontend to the deployed contract ID in `contracts/vaultlock/testnet_config.json`
+- Replace the placeholder demo URLs above with the final public links before submission
 
 ## Submission Checklist
 

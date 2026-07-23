@@ -2,10 +2,10 @@
   "network": "testnet",
   "rpcUrl": "https://soroban-testnet.stellar.org:443",
   "passphrase": "Test SDF Network ; September 2015",
-  "contractId": "CAV7J32QW5L4F66XZ72OZX25Z64D7S5X2U4E6U2I5Y4Y4T5U6O7P8Q9R",
+  "contractId": "CBHKGKI3KKPS7FS2SZEUOSF6I432ZRMV7GUHE5NE4HHWXIVAGUVWGMO5",
   "adminOwner": "GDX7Y32QW5L4F66XZ72OZX25Z64D7S5X2U4E6U2I5Y4Y4T5U6O7P8Q9R",
   "feeRecipient": "GA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXFOOZ4PR6DSPB",
   "penaltyBps": 500,
-  "deployedAt": "2026-07-16T00:00:00Z",
+  "deployedAt": "2026-07-23T00:00:00Z",
   "verified": true
 }

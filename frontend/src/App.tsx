@@ -11,6 +11,7 @@ import {
 import {
   isConnected,
   setAllowed,
+  requestAccess,
   getAddress,
   signTransaction,
 } from '@stellar/freighter-api';
@@ -46,11 +47,18 @@ type Activity = {
 
 type Toast = { id: number; message: string; tone: 'info' | 'success' | 'error' };
 
-const RPC_URL = import.meta.env.VITE_VAULTLOCK_RPC_URL ?? 'https://soroban-testnet.stellar.org:443';
-const NETWORK_PASSPHRASE = import.meta.env.VITE_VAULTLOCK_NETWORK_PASSPHRASE ?? Networks.TESTNET;
+const RPC_URL =
+  import.meta.env.VITE_VAULTLOCK_RPC_URL ??
+  import.meta.env.VITE_SOROBAN_RPC_URL ??
+  'https://soroban-testnet.stellar.org:443';
+const NETWORK_PASSPHRASE =
+  import.meta.env.VITE_VAULTLOCK_NETWORK_PASSPHRASE ??
+  import.meta.env.VITE_NETWORK_PASSPHRASE ??
+  Networks.TESTNET;
 const CONTRACT_ID =
   import.meta.env.VITE_VAULTLOCK_CONTRACT_ID ??
-  'CAV7J32QW5L4F66XZ72OZX25Z64D7S5X2U4E6U2I5Y4Y4T5U6O7P8Q9R';
+  import.meta.env.VITE_CONTRACT_ID ??
+  'CBHKGKI3KKPS7FS2SZEUOSF6I432ZRMV7GUHE5NE4HHWXIVAGUVWGMO5';
 const XLM_ASSET_CONTRACT_ID = StellarAsset.native().contractId(NETWORK_PASSPHRASE);
 
 const server = new Server(RPC_URL);
@@ -92,26 +100,23 @@ function asString(value: unknown): string {
 
 function normalizeStatus(saved: number, goal: number, unlockAt: string): VaultStatus {
   if (saved >= goal) return 'ready';
-  if (new Date(unlockAt).getTime() <= Date.now()) return 'completed';
+  if (new Date(unlockAt).getTime() <= Date.now()) return 'ready';
   return 'locked';
 }
 
 function vaultFromContract(raw: any): Vault {
+  const unlockTimestamp = asNumber(raw.unlock_timestamp ?? raw.unlockAt);
   return {
     id: asNumber(raw.vault_id ?? raw.id ?? raw.vaultId),
     name: asString(raw.title ?? raw.name),
     asset: 'XLM',
     saved: asNumber(raw.balance ?? raw.saved),
     goal: asNumber(raw.goal_amount ?? raw.goal),
-    unlockAt: new Date(Number(asNumber(raw.unlock_timestamp ?? raw.unlockAt)) * 1000)
-      .toISOString()
-      .slice(0, 10),
+    unlockAt: new Date(unlockTimestamp * 1000).toISOString().slice(0, 10),
     status: normalizeStatus(
       asNumber(raw.balance ?? raw.saved),
       asNumber(raw.goal_amount ?? raw.goal),
-      new Date(Number(asNumber(raw.unlock_timestamp ?? raw.unlockAt)) * 1000)
-        .toISOString()
-        .slice(0, 10)
+      new Date(unlockTimestamp * 1000).toISOString().slice(0, 10)
     ),
   };
 }
@@ -128,6 +133,7 @@ async function waitForTx(hash: string) {
 export const App: React.FC = () => {
   const [walletAddress, setWalletAddress] = useState('');
   const [walletConnected, setWalletConnected] = useState(false);
+  const [walletConnecting, setWalletConnecting] = useState(false);
   const [currentVaults, setCurrentVaults] = useState<Vault[]>(INITIAL_VAULTS);
   const [activity, setActivity] = useState<Activity[]>(INITIAL_ACTIVITY);
   const [showCreate, setShowCreate] = useState(false);
@@ -195,16 +201,27 @@ export const App: React.FC = () => {
   }, []);
 
   const connectWallet = async () => {
+    if (walletConnecting) return;
+    setWalletConnecting(true);
     try {
-      const allowed = await setAllowed();
+      const allowed = await requestAccess();
+      if (allowed.error) {
+        throw new Error(allowed.error.message ?? 'Freighter access was not approved');
+      }
       const addr = await getAddress();
+      if (addr.error) {
+        throw new Error(addr.error.message ?? 'Freighter did not return an address');
+      }
       if (!addr?.address) throw new Error('Wallet not approved');
       setWalletAddress(addr.address);
       setWalletConnected(true);
       pushToast('Freighter connected', 'success');
       await refreshVaults(addr.address);
     } catch (error) {
-      pushToast('Connect Freighter to use the live contract.', 'error');
+      const message = error instanceof Error ? error.message : 'Connect Freighter to use the live contract.';
+      pushToast(message, 'error');
+    } finally {
+      setWalletConnecting(false);
     }
   };
 
@@ -332,7 +349,7 @@ export const App: React.FC = () => {
         <div className="topbar-actions">
           <button className="ghost-button" onClick={connectWallet}>
             <Wallet size={16} />
-            {walletConnected ? 'Wallet connected' : 'Connect Freighter'}
+            {walletConnecting ? 'Opening Freighter...' : walletConnected ? 'Wallet connected' : 'Connect Freighter'}
           </button>
           <button className="ghost-button">Proofs</button>
           <button className="primary-button" onClick={() => setShowCreate(true)} disabled={!walletConnected || loading}>
@@ -355,7 +372,7 @@ export const App: React.FC = () => {
             <div className="hero-actions">
               <button className="primary-button" onClick={connectWallet}>
                 <Wallet size={16} />
-                {walletConnected ? 'Wallet ready' : 'Connect Freighter'}
+                {walletConnecting ? 'Opening Freighter...' : walletConnected ? 'Wallet ready' : 'Connect Freighter'}
               </button>
               <button className="ghost-button">Contract ID</button>
             </div>
