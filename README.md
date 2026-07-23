@@ -27,11 +27,6 @@ VaultLock is a Stellar Soroban savings MVP that lets a user create a vault, depo
 | Wallet proof | Missing | `MISSING` |
 | Feedback summary | Missing | `MISSING` |
 
-## Proof
-
-- Evidence home: [`proof/README.md`](./proof/README.md)
-- Add screenshots and notes there when ready.
-
 ## What It Does
 
 - Create a savings vault with a goal amount, unlock date, and asset
@@ -131,3 +126,11 @@ The legacy deploy script also accepts:
 - Screenshots for UI and mobile layout
 - Proof of 10+ wallet interactions
 - Basic user feedback summary
+
+## Screenshot Evidence
+
+- CI/CD pipeline running: add screenshot here
+- Mobile responsive UI: add screenshot here
+- Test output with 3+ passing tests: add screenshot here
+- Wallet interactions: add screenshot here
+- Feedback summary: add notes here
