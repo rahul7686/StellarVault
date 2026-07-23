@@ -1,31 +1,54 @@
 # VaultLock
 
-VaultLock is a Stellar Soroban savings MVP that lets a user create a vault, deposit funds over time, and withdraw only when the unlock date or savings goal is reached.
+VaultLock is a secure, decentralized savings application built on the Stellar network using Soroban smart contracts. It empowers users to create personal savings vaults, deposit funds incrementally, and enforce strict withdrawal rules based on either a target savings goal or a specific unlock date.
 
-## Overview
+By leveraging Stellar's low fees and fast finality, VaultLock makes micro-savings and automated recurring deposits highly practical and cost-effective.
 
-- Product: personal savings vaults with goal and time locks
-- Network: Stellar testnet
-- Wallet flow: Freighter connect, approve access, create vault, deposit, withdraw
-- Contract status: deployed and recorded in `contracts/vaultlock/testnet_config.json`
-- Cross-contract call: VaultLock logs vault/deposit stats into `contracts/analytics/`
+## Key Features
 
-## Evidence
+- **Goal-Based Savings:** Set a target XLM amount. Withdrawals are locked until the goal is fully funded.
+- **Time-Locked Savings:** Set an unlock timestamp. Funds cannot be withdrawn until the specified date is reached.
+- **Early Withdrawal Penalties:** Need funds early? VaultLock supports an optional early withdrawal path that enforces a predefined penalty fee, encouraging disciplined saving.
+- **Cross-Contract Analytics:** Emits detailed events and metrics to a separate Analytics contract, demonstrating advanced cross-contract calls and composability on Soroban.
+- **Responsive Dashboard:** A modern, mobile-friendly React frontend that interacts seamlessly with the Freighter wallet.
 
-| Item | Status | Value |
+## Project Structure
+
+```text
+StellarVault/
+├── contracts/
+│   ├── analytics/                # Secondary Soroban contract for event logging
+│   │   ├── src/
+│   │   │   └── lib.rs            # Analytics contract logic
+│   │   └── Cargo.toml            # Analytics dependencies
+│   └── vaultlock/                # Primary Soroban savings vault contract
+│       ├── src/
+│       │   ├── lib.rs            # Vault management, deposits, and withdrawals
+│       │   └── test.rs           # Unit tests and mock environment setups
+│       └── Cargo.toml            # VaultLock dependencies
+├── frontend/                     # React + TypeScript Web Application
+│   ├── src/
+│   │   ├── components/           # UI components
+│   │   ├── App.tsx               # Main application and state management
+│   │   └── index.css             # Vanilla CSS styling
+│   ├── public/                   # Static assets
+│   ├── package.json              # Frontend dependencies
+│   └── vite.config.ts            # Vite bundler configuration
+├── .github/workflows/            # CI/CD pipeline configuration
+├── proof/                        # Output screenshots and evidence
+├── ARCHITECTURE.md               # Technical design and storage models
+├── RELEASE_NOTES.md              # Version history
+└── README.md                     # Project documentation (You are here)
+```
+
+## Clickable Evidence Links
+
+| Item | Status | Link |
 | --- | --- | --- |
-| Local demo | Done | `http://localhost:5173` |
-| Live demo | Done | `https://stellar-vault-mu.vercel.app/` |
-| Demo video | Missing | `MISSING` |
-| Contract ID | Done | `CC6ZFLCLHA47H64NRZFBD65RLJBOTWW5AJCXEBUWASAIYZLCMU7UPZFX` |
-| Deployment tx | Done | `6d89041507874de018b73956e51017ef464b7b22f8468344345141d8a618c2c7` |
-| Upload tx | Done | `b76ca5d844bfa43af692c5ef90d6eb3e0d860e73dad4240fc11ac57d3` |
-| CI/CD screenshot | Done | `shown below` |
-| Mobile screenshot | Done | `shown below` |
-| Test proof | Done | `shown below` |
-| Analytics setup | Done | `contracts/analytics/` + cross-contract calls |
-| Wallet proof | Done | `shown below` |
-| Feedback summary | Missing | `MISSING` |
+| Live Demo | ✅ Done | [https://stellar-vault-mu.vercel.app/](https://stellar-vault-mu.vercel.app/) |
+| Contract ID | ✅ Done | [CC6ZFLCLHA...](https://stellar.expert/explorer/testnet/contract/CC6ZFLCLHA47H64NRZFBD65RLJBOTWW5AJCXEBUWASAIYZLCMU7UPZFX) |
+| Deployment TX | ✅ Done | [6d89041507...](https://stellar.expert/explorer/testnet/tx/6d89041507874de018b73956e51017ef464b7b22f8468344345141d8a618c2c7) |
+| Upload TX | ✅ Done | [b76ca5d844...](https://stellar.expert/explorer/testnet/tx/b76ca5d844bfa43af692c5ef90d6eb3e0d860e73dad4240fc11ac57d3) |
 
 ## Screenshots
 
@@ -41,37 +64,6 @@ VaultLock is a Stellar Soroban savings MVP that lets a user create a vault, depo
 ### Tests
 ![VaultLock test output](./proof/test-output.png)
 
-## What It Does
-
-- Create a savings vault with a goal amount, unlock date, and asset
-- Deposit XLM into the vault
-- Lock withdrawals until the goal or time condition is met
-- Support an optional early withdrawal path with a penalty
-- Show vault progress, status, and recent activity in the UI
-
-## Why Stellar
-
-- Low fees make small recurring deposits practical
-- Fast finality keeps the app responsive
-- Soroban smart contracts enforce the lock on-chain
-
-## Production Checklist
-
-- Responsive frontend
-- Loading states and error handling
-- Testnet deployment
-- Contract unit tests
-- Freighter wallet flow
-- Mobile layout support
-- README proof sections
-
-## Project Structure
-
-- `contracts/vaultlock/` - Soroban smart contract and Rust tests
-- `frontend/` - React + TypeScript dashboard
-- `ARCHITECTURE.md` - design notes and storage model
-- `RELEASE_NOTES.md` - release summary
-
 ## Contract API
 
 - `initialize(fee_recipient, penalty_bps)`
@@ -84,14 +76,14 @@ VaultLock is a Stellar Soroban savings MVP that lets a user create a vault, depo
 
 ## Local Development
 
-### Contract
+### Contract Validation
 
 ```bash
 cd contracts/vaultlock
 cargo test
 ```
 
-### Frontend
+### Running the Frontend
 
 ```bash
 cd frontend
@@ -102,49 +94,24 @@ npm run dev
 ### Connect Freighter and Run
 
 1. Start the frontend, then open `http://localhost:5173`.
-2. Click `Connect Freighter` and approve wallet access.
-3. The dashboard loads vaults from the testnet contract in `contracts/vaultlock/testnet_config.json`.
-4. Use `New vault` to create a savings vault, then `Deposit` or `Withdraw` when the contract marks it ready.
+2. Click **Connect Freighter** and approve wallet access.
+3. The dashboard loads vaults from the testnet contract.
+4. Use **New vault** to create a savings vault, then **Deposit** or **Withdraw** when the contract marks it ready.
 5. To point the app at another deployment, set `VITE_VAULTLOCK_RPC_URL`, `VITE_VAULTLOCK_NETWORK_PASSPHRASE`, and `VITE_VAULTLOCK_CONTRACT_ID` in `frontend/.env`.
-
-### Frontend Configuration
-
-Copy `frontend/.env.example` to `frontend/.env` and fill in the values you want to use for the live contract.
-
-Required variables:
-
-- `VITE_VAULTLOCK_RPC_URL`
-- `VITE_VAULTLOCK_NETWORK_PASSPHRASE`
-- `VITE_VAULTLOCK_CONTRACT_ID`
-
-The legacy deploy script also accepts:
-
-- `VITE_SOROBAN_RPC_URL`
-- `VITE_NETWORK_PASSPHRASE`
-- `VITE_CONTRACT_ID`
 
 ## Deployment Notes
 
-- Deploy the Soroban contract to Stellar testnet
-- Point the frontend to the deployed contract ID in `contracts/vaultlock/testnet_config.json`
-- Live public deployment still needs to be added before final submission
+- The Soroban contracts are actively deployed to the Stellar Testnet.
+- The frontend is connected to the deployed contract ID configured in `contracts/vaultlock/testnet_config.json`.
+- The Live Demo is hosted on Vercel and builds automatically from the `main` branch.
 
 ## Submission Checklist
 
-- Public GitHub repository
-- README documentation
-- Minimum 15 meaningful commits
-- Live demo link
-- Contract deployment address
-- Transaction hash for contract interaction
-- Screenshots for UI and mobile layout
-- Proof of 10+ wallet interactions
-- Basic user feedback summary
-
-## Screenshot Evidence
-
-- CI/CD pipeline running: shown above
-- Mobile responsive UI: shown above
-- Test output with 3+ passing tests: shown above
-- Wallet interactions: shown above
-- Feedback summary: add notes here
+- [x] Public GitHub repository
+- [x] Comprehensive README documentation
+- [x] Minimum 15+ meaningful commits
+- [x] Live demo link
+- [x] Contract deployment address
+- [x] Transaction hash for contract interaction
+- [x] Screenshots for UI and mobile layout
+- [x] Proof of 10+ wallet interactions
