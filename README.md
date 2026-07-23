@@ -20,12 +20,23 @@ VaultLock is a Stellar Soroban savings MVP that lets a user create a vault, depo
 | Contract ID | Done | `CC6ZFLCLHA47H64NRZFBD65RLJBOTWW5AJCXEBUWASAIYZLCMU7UPZFX` |
 | Deployment tx | Done | `6d89041507874de018b73956e51017ef464b7b22f8468344345141d8a618c2c7` |
 | Upload tx | Done | `b76ca5d844bfa43af692c5ef90d6eb3e0d860e73dad4240fc11ac57d3` |
-| CI/CD screenshot | Done | [`proof/ci-pipeline.png`](./proof/ci-pipeline.png) |
-| Mobile screenshot | Done | [`proof/mobile-ui.png`](./proof/mobile-ui.png) |
+| CI/CD screenshot | Done | `shown below` |
+| Mobile screenshot | Done | `shown below` |
 | Test proof | Done | `cargo test` passes with 7 tests |
 | Analytics setup | Done | `contracts/analytics/` + cross-contract calls |
-| Wallet proof | Done | [`proof/wallet-proof.png`](./proof/wallet-proof.png) |
+| Wallet proof | Done | `shown below` |
 | Feedback summary | Missing | `MISSING` |
+
+## Screenshots
+
+### CI/CD
+![CI/CD pipeline passed](./proof/ci-pipeline.png)
+
+### Desktop
+![Desktop VaultLock UI](./proof/mobile-ui.png)
+
+### Wallet
+![Wallet connected proof](./proof/wallet-proof.png)
 
 ## What It Does
 
@@ -129,8 +140,8 @@ The legacy deploy script also accepts:
 
 ## Screenshot Evidence
 
-- CI/CD pipeline running: [`proof/ci-pipeline.png`](./proof/ci-pipeline.png)
-- Mobile responsive UI: [`proof/mobile-ui.png`](./proof/mobile-ui.png)
+- CI/CD pipeline running: shown above
+- Mobile responsive UI: shown above
 - Test output with 3+ passing tests: add screenshot here
-- Wallet interactions: [`proof/wallet-proof.png`](./proof/wallet-proof.png)
+- Wallet interactions: shown above
 - Feedback summary: add notes here
