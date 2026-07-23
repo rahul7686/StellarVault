@@ -7,7 +7,7 @@
 //! while providing a 5% early withdrawal emergency penalty mechanism (`early_withdraw`).
 
 use soroban_sdk::{
-    contract, contracterror, contractimpl, contracttype, symbol_short, token, Address, Env, String, Vec,
+    contract, contracterror, contractimpl, contracttype, symbol_short, token, Address, Env, String, Vec, IntoVal,
 };
 
 /// Numeric error codes returned on-chain during failed verification steps.
@@ -64,6 +64,7 @@ pub enum DataKey {
     VaultCounter,
     VaultInfo(u64),
     UserVaults(Address),
+    AnalyticsId,
 }
 
 #[contract]
@@ -71,6 +72,11 @@ pub struct VaultLockContract;
 
 #[contractimpl]
 impl VaultLockContract {
+    /// Sets the analytics contract address for cross-contract communication.
+    pub fn set_analytics(env: Env, analytics_id: Address) {
+        env.storage().instance().set(&DataKey::AnalyticsId, &analytics_id);
+    }
+
     /// Initializes the VaultLock contract with a fee recipient and early withdrawal penalty rate in basis points (100 bps = 1%).
     pub fn initialize(env: Env, fee_recipient: Address, penalty_bps: u32) -> Result<(), Error> {
         if env.storage().instance().has(&DataKey::Config) {
@@ -132,6 +138,10 @@ impl VaultLockContract {
         user_list.push_back(counter);
         env.storage().instance().set(&DataKey::UserVaults(owner.clone()), &user_list);
 
+        if let Some(analytics_id) = env.storage().instance().get::<_, Address>(&DataKey::AnalyticsId) {
+            env.invoke_contract::<()>(&analytics_id, &symbol_short!("log_vault"), soroban_sdk::vec![&env, owner.clone().into_val(&env)]);
+        }
+
         env.events()
             .publish((symbol_short!("created"), owner), (counter, goal_amount, unlock_timestamp));
 
@@ -165,6 +175,10 @@ impl VaultLockContract {
             .ok_or(Error::ArithmeticOverflow)?;
 
         env.storage().instance().set(&DataKey::VaultInfo(vault_id), &vault);
+
+        if let Some(analytics_id) = env.storage().instance().get::<_, Address>(&DataKey::AnalyticsId) {
+            env.invoke_contract::<()>(&analytics_id, &symbol_short!("log_dep"), soroban_sdk::vec![&env, depositor.clone().into_val(&env), amount.into_val(&env)]);
+        }
 
         env.events()
             .publish((symbol_short!("deposit"), depositor), (vault_id, amount, vault.balance));
