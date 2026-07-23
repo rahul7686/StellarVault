@@ -1,0 +1,38 @@
+name: StellarVault CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  contract-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Build Contracts
+        run: cargo build --target wasm32-unknown-unknown --release
+        working-directory: contracts
+      - name: Run Contract Tests
+        run: cargo test
+        working-directory: contracts
+
+  frontend-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+      - name: Install Dependencies
+        run: npm install
+        working-directory: frontend
+      - name: Run Frontend Tests
+        run: npm run test
+        working-directory: frontend
