@@ -36,6 +36,7 @@ type Vault = {
   goal: number;
   unlockAt: string;
   status: VaultStatus;
+  source?: 'onchain' | 'demo';
 };
 
 type Activity = {
