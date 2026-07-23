@@ -15,7 +15,7 @@ VaultLock is a Stellar Soroban savings MVP that lets a user create a vault, depo
 | Item | Status | Value |
 | --- | --- | --- |
 | Local demo | Done | `http://localhost:5173` |
-| Live demo | Missing | `MISSING` |
+| Live demo | Done | `https://stellar-vault-mu.vercel.app/` |
 | Demo video | Missing | `MISSING` |
 | Contract ID | Done | `CC6ZFLCLHA47H64NRZFBD65RLJBOTWW5AJCXEBUWASAIYZLCMU7UPZFX` |
 | Deployment tx | Done | `6d89041507874de018b73956e51017ef464b7b22f8468344345141d8a618c2c7` |
