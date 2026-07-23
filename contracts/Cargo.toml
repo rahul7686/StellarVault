@@ -1,6 +1,0 @@
-[workspace]
-members = [
-    "vaultlock",
-    "analytics"
-]
-resolver = "2"

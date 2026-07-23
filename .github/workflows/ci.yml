@@ -15,12 +15,18 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown
-      - name: Build Contracts
+      - name: Build VaultLock
         run: cargo build --target wasm32-unknown-unknown --release
-        working-directory: contracts
-      - name: Run Contract Tests
+        working-directory: contracts/vaultlock
+      - name: Run VaultLock Tests
         run: cargo test
-        working-directory: contracts
+        working-directory: contracts/vaultlock
+      - name: Build Analytics
+        run: cargo build --target wasm32-unknown-unknown --release
+        working-directory: contracts/analytics
+      - name: Run Analytics Tests
+        run: cargo test
+        working-directory: contracts/analytics
 
   frontend-tests:
     runs-on: ubuntu-latest
