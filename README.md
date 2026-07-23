@@ -46,7 +46,7 @@ StellarVault/
 | Item | Status | Link |
 | --- | --- | --- |
 | Live Demo | ✅ Done | [https://stellar-vault-mu.vercel.app/](https://stellar-vault-mu.vercel.app/) |
-| Demo Video | ⏳ Pending | `[Insert YouTube/Loom Link Here]` |
+| Demo Video | ✅ Done | [Google Drive Video Link](https://drive.google.com/file/d/1PE6qVG4shq8FhCPfgaHXALx6KDtU4TvT/view?usp=sharing) |
 | Main Contract ID | ✅ Done | [CC6ZFLCLHA...](https://stellar.expert/explorer/testnet/contract/CC6ZFLCLHA47H64NRZFBD65RLJBOTWW5AJCXEBUWASAIYZLCMU7UPZFX) |
 | Analytics Contract ID | ✅ Done | [CAE2B4DF69...](https://stellar.expert/explorer/testnet/contract/CAE2B4DF698D2BAE57A88B46D5220D12F2A900A9C348A7A00B89C339E054CA24) |
 
@@ -144,4 +144,4 @@ npm run dev
 - [x] Analytics and monitoring setup (Cross-contract calls)
 - [x] Proof of 10+ wallet interactions
 - [x] Basic user feedback summary
-- [ ] Demo video link (To be added)
+- [x] Demo video link (To be added)
