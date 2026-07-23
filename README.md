@@ -11,21 +11,22 @@ VaultLock is a Stellar Soroban savings MVP that lets a user create a vault, depo
 
 ## Live Demo
 
-- Demo URL: `https://vaultlock-demo.vercel.app`
-- Demo video: `https://youtube.com/watch?v=vaultlock_demo_vid`
+- Demo URL: [Live Deployment on GitHub Pages/Vercel/Netlify]
+- Demo video: [INSERT YOUTUBE LINK (1-2 mins)]
 
 ## Testnet Contract
 
 - Contract ID: `CC6ZFLCLHA47H64NRZFBD65RLJBOTWW5AJCXEBUWASAIYZLCMU7UPZFX`
+- Transaction hash for contract interaction: `[INSERT RECENT TX HASH]`
 - RPC: `https://soroban-testnet.stellar.org:443`
 - Network passphrase: `Test SDF Network ; September 2015`
 
-## Required Proof
+## Required Proof Screenshots
 
-- Wallet interactions: [stellar.expert dashboard link](https://stellar.expert/explorer/testnet/account/GA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXFOOZ4PR6DSPB)
-- User feedback summary: 12 users tested the MVP. Feedback was positive; users liked the enforced savings mechanic. 3 users suggested adding recurring deposits, which is planned for v2.
-- Mobile screenshots: `frontend/public/mobile-showcase.png`
-- Analytics or monitoring proof: Sentry error monitoring and Google Analytics integrated. Dashboard shows 15 active users this week.
+- Mobile responsive UI: `[ADD SCREENSHOT]`
+- CI/CD pipeline running: `[ADD SCREENSHOT]`
+- Test output with 3+ passing tests: `[ADD SCREENSHOT]`
+
 
 ## What It Does
 
