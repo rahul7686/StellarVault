@@ -22,7 +22,7 @@ VaultLock is a Stellar Soroban savings MVP that lets a user create a vault, depo
 | Upload tx | Done | `b76ca5d844bfa43af692c5ef90d6eb3e0d860e73dad4240fc11ac57d3` |
 | CI/CD screenshot | Done | `shown below` |
 | Mobile screenshot | Done | `shown below` |
-| Test proof | Done | `cargo test` passes with 7 tests |
+| Test proof | Done | `shown below` |
 | Analytics setup | Done | `contracts/analytics/` + cross-contract calls |
 | Wallet proof | Done | `shown below` |
 | Feedback summary | Missing | `MISSING` |
@@ -37,6 +37,9 @@ VaultLock is a Stellar Soroban savings MVP that lets a user create a vault, depo
 
 ### Mobile Screenshot
 ![Wallet connected proof](./proof/wallet-proof.png)
+
+### Tests
+![VaultLock test output](./proof/test-output.png)
 
 ## What It Does
 
@@ -142,6 +145,6 @@ The legacy deploy script also accepts:
 
 - CI/CD pipeline running: shown above
 - Mobile responsive UI: shown above
-- Test output with 3+ passing tests: add screenshot here
+- Test output with 3+ passing tests: shown above
 - Wallet interactions: shown above
 - Feedback summary: add notes here
