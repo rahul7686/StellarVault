@@ -144,4 +144,4 @@ npm run dev
 - [x] Analytics and monitoring setup (Cross-contract calls)
 - [x] Proof of 10+ wallet interactions
 - [x] Basic user feedback summary
-- [x] Demo video link (To be added)
+- [x] Demo video link
