@@ -2,31 +2,35 @@
 
 VaultLock is a Stellar Soroban savings MVP that lets a user create a vault, deposit funds over time, and withdraw only when the unlock date or savings goal is reached.
 
-## Submission Summary
+## Overview
 
 - Product: personal savings vaults with goal and time locks
 - Network: Stellar testnet
 - Wallet flow: Freighter connect, approve access, create vault, deposit, withdraw
 - Contract status: deployed and recorded in `contracts/vaultlock/testnet_config.json`
+- Cross-contract call: VaultLock logs vault/deposit stats into `contracts/analytics/`
 
-## Live Demo
+## Evidence
 
-- Demo URL: [Live Deployment on GitHub Pages/Vercel/Netlify]
-- Demo video: [INSERT YOUTUBE LINK (1-2 mins)]
+| Item | Status | Value |
+| --- | --- | --- |
+| Local demo | Done | `http://localhost:5173` |
+| Live demo | Missing | `MISSING` |
+| Demo video | Missing | `MISSING` |
+| Contract ID | Done | `CC6ZFLCLHA47H64NRZFBD65RLJBOTWW5AJCXEBUWASAIYZLCMU7UPZFX` |
+| Deployment tx | Done | `6d89041507874de018b73956e51017ef464b7b22f8468344345141d8a618c2c7` |
+| Upload tx | Done | `b76ca5d844bfa43af692c5ef90d6eb3e0d860e73dad4240fc11ac57d3` |
+| CI/CD screenshot | Missing | `MISSING` |
+| Mobile screenshot | Missing | `MISSING` |
+| Test proof | Done | `cargo test` passes with 7 tests |
+| Analytics setup | Done | `contracts/analytics/` + cross-contract calls |
+| Wallet proof | Missing | `MISSING` |
+| Feedback summary | Missing | `MISSING` |
 
-## Testnet Contract
+## Proof
 
-- Contract ID: `CC6ZFLCLHA47H64NRZFBD65RLJBOTWW5AJCXEBUWASAIYZLCMU7UPZFX`
-- Transaction hash for contract interaction: `[INSERT RECENT TX HASH]`
-- RPC: `https://soroban-testnet.stellar.org:443`
-- Network passphrase: `Test SDF Network ; September 2015`
-
-## Required Proof Screenshots
-
-- Mobile responsive UI: `[ADD SCREENSHOT]`
-- CI/CD pipeline running: `[ADD SCREENSHOT]`
-- Test output with 3+ passing tests: `[ADD SCREENSHOT]`
-
+- Evidence home: [`proof/README.md`](./proof/README.md)
+- Add screenshots and notes there when ready.
 
 ## What It Does
 
@@ -114,7 +118,7 @@ The legacy deploy script also accepts:
 
 - Deploy the Soroban contract to Stellar testnet
 - Point the frontend to the deployed contract ID in `contracts/vaultlock/testnet_config.json`
-- Replace the placeholder demo URLs above with the final public links before submission
+- Live public deployment still needs to be added before final submission
 
 ## Submission Checklist
 
@@ -123,6 +127,7 @@ The legacy deploy script also accepts:
 - Minimum 15 meaningful commits
 - Live demo link
 - Contract deployment address
+- Transaction hash for contract interaction
 - Screenshots for UI and mobile layout
 - Proof of 10+ wallet interactions
 - Basic user feedback summary
