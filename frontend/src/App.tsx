@@ -98,13 +98,14 @@ function asString(value: unknown): string {
   return typeof value === 'string' ? value : String(value ?? '');
 }
 
-function normalizeStatus(saved: number, goal: number, unlockAt: string): VaultStatus {
+export function normalizeStatus(saved: number, goal: number, unlockAt: string): VaultStatus {
   if (saved >= goal) return 'ready';
   if (new Date(unlockAt).getTime() <= Date.now()) return 'ready';
   return 'locked';
 }
 
-function vaultFromContract(raw: any): Vault {
+function vaultFromContract(rawInfo: any): Vault {
+  const raw = rawInfo?.unwrap ? rawInfo.unwrap() : (rawInfo?.value || rawInfo);
   const unlockTimestamp = asNumber(raw.unlock_timestamp ?? raw.unlockAt);
   return {
     id: asNumber(raw.vault_id ?? raw.id ?? raw.vaultId),
@@ -113,11 +114,14 @@ function vaultFromContract(raw: any): Vault {
     saved: asNumber(raw.balance ?? raw.saved),
     goal: asNumber(raw.goal_amount ?? raw.goal),
     unlockAt: new Date(unlockTimestamp * 1000).toISOString().slice(0, 10),
-    status: normalizeStatus(
-      asNumber(raw.balance ?? raw.saved),
-      asNumber(raw.goal_amount ?? raw.goal),
-      new Date(unlockTimestamp * 1000).toISOString().slice(0, 10)
-    ),
+    source: 'onchain',
+    status: raw.is_active === false 
+      ? 'completed' 
+      : normalizeStatus(
+          asNumber(raw.balance ?? raw.saved),
+          asNumber(raw.goal_amount ?? raw.goal),
+          new Date(unlockTimestamp * 1000).toISOString().slice(0, 10)
+        ),
   };
 }
 
@@ -178,13 +182,27 @@ export const App: React.FC = () => {
         );
         nextVaults.push(vaultFromContract(vaultResult.result));
       }
-      setCurrentVaults(nextVaults);
+      setCurrentVaults((prev) => {
+        // Event streaming emulation: detect changes
+        for (const next of nextVaults) {
+          const old = prev.find(p => p.id === next.id);
+          if (old && next.saved > old.saved) {
+            pushToast(`Deposit of ${next.saved - old.saved} XLM confirmed in real-time!`, 'success');
+          } else if (!old && prev.length > 0 && prev[0].source === 'onchain') {
+            pushToast(`New vault "${next.name}" confirmed in real-time!`, 'success');
+          } else if (old && old.status !== 'completed' && next.status === 'completed') {
+            pushToast(`Vault "${next.name}" was completed in real-time!`, 'success');
+          }
+        }
+        return nextVaults;
+      });
     } catch (error) {
       pushToast('Could not load contract vaults. Showing demo data.', 'error');
     }
   };
 
   useEffect(() => {
+    let interval: number | undefined;
     void (async () => {
       try {
         const connected = await isConnected();
@@ -193,11 +211,17 @@ export const App: React.FC = () => {
           setWalletAddress(addr.address);
           setWalletConnected(true);
           await refreshVaults(addr.address);
+
+          // Event streaming / real-time updates polling
+          interval = window.setInterval(() => refreshVaults(addr.address), 8000);
         }
       } catch {
         // Keep the app usable even if Freighter is not available.
       }
     })();
+    return () => {
+      if (interval) window.clearInterval(interval);
+    };
   }, []);
 
   const connectWallet = async () => {
@@ -351,7 +375,7 @@ export const App: React.FC = () => {
             <Wallet size={16} />
             {walletConnecting ? 'Opening Freighter...' : walletConnected ? 'Wallet connected' : 'Connect Freighter'}
           </button>
-          <button className="ghost-button">Proofs</button>
+          <button className="ghost-button" onClick={() => window.open('https://github.com/rahul7686/StellarVault', '_blank')}>Proofs</button>
           <button className="primary-button" onClick={() => setShowCreate(true)} disabled={!walletConnected || loading}>
             <Plus size={16} />
             New vault
@@ -374,7 +398,7 @@ export const App: React.FC = () => {
                 <Wallet size={16} />
                 {walletConnecting ? 'Opening Freighter...' : walletConnected ? 'Wallet ready' : 'Connect Freighter'}
               </button>
-              <button className="ghost-button">Contract ID</button>
+              <button className="ghost-button" onClick={() => window.open(`https://stellar.expert/explorer/testnet/contract/${CONTRACT_ID}`, '_blank')}>Contract ID</button>
             </div>
           </div>
 
