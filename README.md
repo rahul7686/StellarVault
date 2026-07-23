@@ -32,10 +32,10 @@ VaultLock is a Stellar Soroban savings MVP that lets a user create a vault, depo
 ### CI/CD
 ![CI/CD pipeline passed](./proof/ci-pipeline.png)
 
-### Desktop
+### Desktop Screenshot
 ![Desktop VaultLock UI](./proof/mobile-ui.png)
 
-### Wallet
+### Mobile Screenshot
 ![Wallet connected proof](./proof/wallet-proof.png)
 
 ## What It Does
