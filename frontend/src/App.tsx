@@ -160,7 +160,7 @@ export const App: React.FC = () => {
   const completedVaults = useMemo(() => currentVaults.filter((vault) => vault.status === 'completed'), [currentVaults]);
   const totalSaved = useMemo(() => currentVaults.reduce((sum, vault) => sum + vault.saved, 0), [currentVaults]);
 
-  const refreshVaults = async (owner: string) => {
+  const refreshVaults = async (owner: string, isBackground = false) => {
     try {
       const { result } = await server.queryContract<number[]>(
         CONTRACT_ID,
@@ -198,7 +198,10 @@ export const App: React.FC = () => {
         return nextVaults;
       });
     } catch (error) {
-      pushToast('Could not load contract vaults. Showing demo data.', 'error');
+      console.error("refreshVaults error:", error);
+      if (!isBackground) {
+        pushToast('Could not load contract vaults. Showing demo data.', 'error');
+      }
     }
   };
 
@@ -211,10 +214,10 @@ export const App: React.FC = () => {
           const addr = await getAddress();
           setWalletAddress(addr.address);
           setWalletConnected(true);
-          await refreshVaults(addr.address);
+          await refreshVaults(addr.address, false);
 
           // Event streaming / real-time updates polling
-          interval = window.setInterval(() => refreshVaults(addr.address), 8000);
+          interval = window.setInterval(() => refreshVaults(addr.address, true), 8000);
         }
       } catch {
         // Keep the app usable even if Freighter is not available.
