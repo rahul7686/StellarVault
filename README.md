@@ -54,7 +54,7 @@ StellarVault/
 
 VaultLock utilizes a secondary Soroban contract (`contracts/analytics`) to provide on-chain monitoring and event streaming. Every time a vault is created, deposited into, or withdrawn from, the primary VaultLock contract makes a **cross-contract call** to the Analytics contract to log the event. This ensures all protocol metrics are fully decentralized and auditable on the Stellar ledger.
 
-## 11 review by users
+## Review by users
 
 1. "Deposits settled instantly, making micro-savings painless."
 2. "I love how the early withdrawal penalty encourages me to save."
