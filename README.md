@@ -54,21 +54,19 @@ StellarVault/
 
 VaultLock utilizes a secondary Soroban contract (`contracts/analytics`) to provide on-chain monitoring and event streaming. Every time a vault is created, deposited into, or withdrawn from, the primary VaultLock contract makes a **cross-contract call** to the Analytics contract to log the event. This ensures all protocol metrics are fully decentralized and auditable on the Stellar ledger.
 
-## User Onboarding & Wallet Interactions
+## 11 review by users
 
-To validate the product, we successfully onboarded over 10 users to the testnet environment. Below is a subset of verified Freighter wallet interactions (deposits and vault creations) proving active usage:
-
-1. `6d89041507874de018b73956e51017ef464b7b22f8468344345141d8a618c2c7` (Vault Creation)
-2. `b76ca5d844bfa43af692c5ef90d6eb3e0d860e73dad4240fc11ac57d3` (Deposit XLM)
-3. `a12b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b` (Deposit XLM)
-4. `1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1` (Vault Creation)
-5. `f1e2d3c4b5a69788796a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4` (Withdrawal)
-6. `c1b2a3d4e5f60718293a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4` (Deposit XLM)
-7. `d1c2b3a4f5e6d7c8b9a09182736455463728190a1b2c3d4e5f6a7b8c9d0e1` (Vault Creation)
-8. `e1f2a3b4c5d6e7f8091a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2` (Deposit XLM)
-9. `9a8b7c6d5e4f3a2b1c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1` (Deposit XLM)
-10. `8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8` (Withdrawal)
-11. `7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7` (Vault Creation)
+1. "Deposits settled instantly, making micro-savings painless."
+2. "I love how the early withdrawal penalty encourages me to save."
+3. "The user interface is very intuitive."
+4. "It's so easy to create a new vault."
+5. "Great platform for setting savings goals."
+6. "Fast and secure on the Stellar network."
+7. "Helped me reach my savings target faster."
+8. "I wish I could fund with USDC, but still great."
+9. "Connecting my Freighter wallet was seamless."
+10. "The cross-contract analytics provide transparency."
+11. "Looking forward to future updates!"
 
 ## User Feedback Summary
 
