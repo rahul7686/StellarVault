@@ -48,7 +48,7 @@ StellarVault/
 | Live Demo | ✅ Done | [https://stellar-vault-mu.vercel.app/](https://stellar-vault-mu.vercel.app/) |
 | Demo Video | ✅ Done | [Google Drive Video Link](https://drive.google.com/file/d/1PE6qVG4shq8FhCPfgaHXALx6KDtU4TvT/view?usp=sharing) |
 | Main Contract ID | ✅ Done | [CC6ZFLCLHA...](https://stellar.expert/explorer/testnet/contract/CC6ZFLCLHA47H64NRZFBD65RLJBOTWW5AJCXEBUWASAIYZLCMU7UPZFX) |
-| Analytics Contract ID | ✅ Done | [CDFOFNG7NG...](https://stellar.expert/explorer/testnet/contract/CDFOFNG7NGGSXLSXVCFUNVJCBUJPFKIAVHBURJ5ABOE4GOPAKTFCIWUC) |
+| Analytics Contract ID | ✅ Done | [CDDGYQFUMT...](https://stellar.expert/explorer/testnet/contract/CDDGYQFUMT6MTEGZVOBUQ37GPX5QM5DHJTIWFE5JFTL3AJNK5LMGWFII) |
 
 ## Analytics & Monitoring Setup
 
