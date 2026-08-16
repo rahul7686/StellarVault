@@ -35,6 +35,8 @@ pub enum Error {
     Unauthorized = 9,
     /// Integer arithmetic computation overflowed or underflowed safe bounds.
     ArithmeticOverflow = 10,
+    /// New unlock timestamp must be strictly greater than current unlock timestamp.
+    InvalidUnlockTimestamp = 11,
 }
 
 #[contracttype]
@@ -270,6 +272,33 @@ impl VaultLockContract {
             .publish((symbol_short!("early_wd"), vault.owner.clone()), (vault_id, payout));
 
         Ok(payout)
+    }
+
+    /// Extends the unlock timestamp of an active vault to encourage disciplined long-term saving.
+    pub fn extend_lock(env: Env, vault_id: u64, new_unlock_timestamp: u64) -> Result<u64, Error> {
+        let mut vault: Vault = env
+            .storage()
+            .instance()
+            .get(&DataKey::VaultInfo(vault_id))
+            .ok_or(Error::VaultNotFound)?;
+
+        vault.owner.require_auth();
+
+        if !vault.is_active {
+            return Err(Error::VaultInactive);
+        }
+
+        if new_unlock_timestamp <= vault.unlock_timestamp {
+            return Err(Error::InvalidUnlockTimestamp);
+        }
+
+        vault.unlock_timestamp = new_unlock_timestamp;
+        env.storage().instance().set(&DataKey::VaultInfo(vault_id), &vault);
+
+        env.events()
+            .publish((symbol_short!("extended"), vault.owner.clone()), (vault_id, new_unlock_timestamp));
+
+        Ok(new_unlock_timestamp)
     }
 
     /// Read-only getter for specific vault data.
