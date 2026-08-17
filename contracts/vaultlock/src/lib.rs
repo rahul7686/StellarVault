@@ -37,6 +37,8 @@ pub enum Error {
     ArithmeticOverflow = 10,
     /// New unlock timestamp must be strictly greater than current unlock timestamp.
     InvalidUnlockTimestamp = 11,
+    /// Protocol operations are currently paused by administration.
+    ContractPaused = 12,
 }
 
 #[contracttype]
@@ -44,6 +46,17 @@ pub enum Error {
 pub struct ContractConfig {
     pub fee_recipient: Address,
     pub penalty_bps: u32,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum DataKey {
+    Config,
+    VaultCounter,
+    VaultInfo(u64),
+    UserVaults(Address),
+    AnalyticsId,
+    IsPaused,
 }
 
 #[contracttype]
@@ -59,16 +72,6 @@ pub struct Vault {
     pub is_active: bool,
 }
 
-#[contracttype]
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum DataKey {
-    Config,
-    VaultCounter,
-    VaultInfo(u64),
-    UserVaults(Address),
-    AnalyticsId,
-}
-
 #[contract]
 pub struct VaultLockContract;
 
@@ -77,6 +80,26 @@ impl VaultLockContract {
     /// Sets the analytics contract address for cross-contract communication.
     pub fn set_analytics(env: Env, analytics_id: Address) {
         env.storage().instance().set(&DataKey::AnalyticsId, &analytics_id);
+    }
+
+    /// Toggles administrative pause state for protocol emergency operations.
+    pub fn set_paused(env: Env, admin: Address, paused: bool) -> Result<(), Error> {
+        admin.require_auth();
+        let config: ContractConfig = env
+            .storage()
+            .instance()
+            .get(&DataKey::Config)
+            .ok_or(Error::NotInitialized)?;
+        if admin != config.fee_recipient {
+            return Err(Error::Unauthorized);
+        }
+        env.storage().instance().set(&DataKey::IsPaused, &paused);
+        Ok(())
+    }
+
+    /// Queries whether the contract is currently paused.
+    pub fn is_paused(env: Env) -> bool {
+        env.storage().instance().get(&DataKey::IsPaused).unwrap_or(false)
     }
 
     /// Initializes the VaultLock contract with a fee recipient and early withdrawal penalty rate in basis points (100 bps = 1%).
@@ -94,6 +117,7 @@ impl VaultLockContract {
         };
         env.storage().instance().set(&DataKey::Config, &config);
         env.storage().instance().set(&DataKey::VaultCounter, &0u64);
+        env.storage().instance().set(&DataKey::IsPaused, &false);
         Ok(())
     }
 
@@ -107,6 +131,10 @@ impl VaultLockContract {
         asset: Address,
     ) -> Result<u64, Error> {
         owner.require_auth();
+
+        if Self::is_paused(env.clone()) {
+            return Err(Error::ContractPaused);
+        }
 
         if !env.storage().instance().has(&DataKey::Config) {
             return Err(Error::NotInitialized);
@@ -153,6 +181,10 @@ impl VaultLockContract {
     /// Deposits funds into an active vault. The caller must authorize the transfer.
     pub fn deposit(env: Env, depositor: Address, vault_id: u64, amount: i128) -> Result<i128, Error> {
         depositor.require_auth();
+
+        if Self::is_paused(env.clone()) {
+            return Err(Error::ContractPaused);
+        }
 
         if amount <= 0 {
             return Err(Error::InvalidDepositAmount);
