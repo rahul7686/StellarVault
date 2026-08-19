@@ -201,3 +201,56 @@ fn test_invalid_deposit_amount() {
     );
     client.deposit(&owner, &vault_id, &0); // Invalid: deposit amount must be > 0
 }
+
+#[test]
+fn test_extend_lock() {
+    let (env, client, owner, _fee_recipient, token, _token_admin_client) = setup_env();
+    let vault_id = client.create_vault(
+        &owner,
+        &String::from_slice(&env, "Flexible Goal"),
+        &5_000,
+        &100_000,
+        &token.address,
+    );
+
+    let extended_time = client.extend_lock(&vault_id, &200_000);
+    assert_eq!(extended_time, 200_000);
+
+    let vault = client.get_vault(&vault_id);
+    assert_eq!(vault.unlock_timestamp, 200_000);
+}
+
+#[test]
+fn test_pause_contract() {
+    let (env, client, owner, fee_recipient, token, token_admin_client) = setup_env();
+    token_admin_client.mint(&owner, &2_000);
+
+    assert!(!client.is_paused());
+
+    // Pause contract as admin (fee_recipient)
+    client.set_paused(&fee_recipient, &true);
+    assert!(client.is_paused());
+
+    // Try create vault while paused should fail
+    let res = client.try_create_vault(
+        &owner,
+        &String::from_slice(&env, "Paused Vault"),
+        &1_000,
+        &100_000,
+        &token.address,
+    );
+    assert_eq!(res, Err(Ok(Error::ContractPaused)));
+
+    // Unpause contract
+    client.set_paused(&fee_recipient, &false);
+    assert!(!client.is_paused());
+
+    let vault_id = client.create_vault(
+        &owner,
+        &String::from_slice(&env, "Resumed Vault"),
+        &1_000,
+        &100_000,
+        &token.address,
+    );
+    assert_eq!(vault_id, 1);
+}
