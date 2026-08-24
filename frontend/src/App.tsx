@@ -232,21 +232,24 @@ export const App: React.FC = () => {
     if (walletConnecting) return;
     setWalletConnecting(true);
     try {
+      const check = await isConnected();
+      if (!check.isConnected) {
+        throw new Error('Freighter extension not detected. Please install Freighter to connect.');
+      }
       const allowed = await requestAccess();
       if (allowed.error) {
-        throw new Error(allowed.error.message ?? 'Freighter access was not approved');
+        throw new Error(allowed.error.message ?? 'Freighter access authorization was rejected.');
       }
       const addr = await getAddress();
-      if (addr.error) {
-        throw new Error(addr.error.message ?? 'Freighter did not return an address');
+      if (addr.error || !addr?.address) {
+        throw new Error(addr.error?.message ?? 'Freighter wallet address could not be retrieved.');
       }
-      if (!addr?.address) throw new Error('Wallet not approved');
       setWalletAddress(addr.address);
       setWalletConnected(true);
-      pushToast('Freighter connected', 'success');
+      pushToast('Freighter wallet successfully connected', 'success');
       await refreshVaults(addr.address);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Connect Freighter to use the live contract.';
+      const message = error instanceof Error ? error.message : 'Freighter wallet connection failed.';
       pushToast(message, 'error');
     } finally {
       setWalletConnecting(false);
