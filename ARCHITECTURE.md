@@ -39,8 +39,45 @@ With `penalty_bps = 500` (`5.00%`), the split between the vault owner and the co
 
 ---
 
-## 3. Frontend-Contract Telemetry & Monitoring
+## 4. Protocol Interaction Sequence Diagram
 
-The Vite + React frontend integrates a real-time event simulation layer (`ToastContainer` and `AnalyticsModal`) that tracks and logs every wallet interaction:
-- **Proof Hash Generation:** Emits simulated verification hashes (`0x8f2a...`) mapped to user actions (`CREATE_VAULT`, `DEPOSIT`, `WITHDRAW`).
-- **Exportable Proof JSON:** Packages all onboarding metrics and reviews (`Feedbacks`) into an exportable JSON payload for instant verification by hackathon evaluators.
+The diagram below illustrates the end-to-end transaction flow for vault creation, deposit, cross-contract telemetry logging, and withdrawal processing:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User
+    participant Wallet as Freighter Wallet
+    participant App as React Frontend
+    participant Contract as VaultLock Contract
+    participant Analytics as Analytics Contract
+    participant Ledger as Stellar Ledger
+
+    User->>App: Click "Create Vault"
+    App->>Wallet: Request Tx Signing (create_vault)
+    Wallet-->>User: Prompt Approval Modal
+    User->>Wallet: Approve Transaction
+    Wallet->>App: Signed Transaction Envelope
+    App->>Contract: Submit InvokeHostFunction
+    Contract->>Contract: Validate Params & Authorization
+    Contract->>Analytics: Cross-Contract Call (log_vault)
+    Analytics->>Ledger: Update TotalVaults Counter
+    Contract->>Ledger: Publish "created" Event & Save VaultInfo(id)
+    Contract-->>App: Return Vault ID
+    App-->>User: Display Success Toast & Updated Dashboard
+```
+
+---
+
+## 5. Vault State Machine Lifecycle
+
+```mermaid
+stateDiagram-v2
+    [*] --> Active: create_vault()
+    Active --> Active: deposit() [balance += amount]
+    Active --> Active: extend_lock() [unlock_timestamp updated]
+    Active --> Completed: withdraw() [time >= unlock OR balance >= goal]
+    Active --> Completed: early_withdraw() [penalty applied]
+    Completed --> [*]
+```
+
