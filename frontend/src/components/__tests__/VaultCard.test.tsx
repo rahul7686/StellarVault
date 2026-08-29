@@ -1,9 +1,13 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { afterEach, describe, it, expect, vi } from 'vitest';
+import { cleanup, render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
 import { VaultCard, Vault } from '../VaultCard';
 
 describe('VaultCard component', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   const sampleVault: Vault = {
     id: 1,
     name: 'Emergency Fund',
@@ -32,7 +36,7 @@ describe('VaultCard component', () => {
 
     render(<VaultCard vault={sampleVault} onDeposit={onDeposit} onWithdraw={onWithdraw} />);
 
-    const depositBtn = screen.getByText('Deposit');
+    const depositBtn = screen.getAllByRole('button', { name: 'Deposit' })[0];
     fireEvent.click(depositBtn);
 
     expect(onDeposit).toHaveBeenCalledWith(sampleVault);
