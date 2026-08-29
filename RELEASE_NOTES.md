@@ -1,3 +1,23 @@
+# 🚀 StellarVault (VaultLock) v2.0.0 — August 2026 Protocol Expansion
+
+We are thrilled to announce **StellarVault v2.0.0**, featuring major smart contract upgrades, emergency safety controls, modularized UI components, and expanded cross-contract telemetry.
+
+---
+
+## ✨ Version 2.0.0 Highlights (August 2026)
+
+### 1. Smart Contract Features (`contracts/vaultlock/`)
+- **Lock Extension (`extend_lock`):** Enables vault owners to seamlessly extend their target unlock timestamp on-chain to encourage disciplined savings.
+- **Emergency Protocol Pause (`set_paused` / `is_paused`):** Added administrative safety circuit-breaker preventing vault creation or deposits during protocol maintenance.
+- **Expanded Analytics Metrics (`contracts/analytics/`):** Real-time tracking of deposit counts, total protocol volume, and withdrawal statistics via cross-contract calls.
+
+### 2. Modularized Dashboard & Styling (`frontend/`)
+- **Component Extraction:** Modularized UI architecture (`Header`, `StatsOverview`, `VaultCard`, `VaultProgress`, `ThemeToggle`, `ExportModal`).
+- **Glassmorphism Design System:** Updated glassmorphism visual styling, dark/light theme switching, and local storage persistence.
+- **Data Export:** Integrated CSV and JSON data exporting for personal financial record-keeping.
+
+---
+
 # 🚀 StellarVault (VaultLock) v1.0.0 — Level 4 & Level 5 Production Release
 
 We are proud to present **VaultLock v1.0.0**, our fully functional, production-ready MVP submitted for the **RiseIn Stellar Journey to Mastery Hackathon**.

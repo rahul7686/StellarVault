@@ -36,8 +36,10 @@ StellarVault/
 │   └── vite.config.ts            # Vite bundler configuration
 ├── .github/workflows/            # CI/CD pipeline configuration
 ├── proof/                        # Output screenshots and evidence
-├── ARCHITECTURE.md               # Technical design and storage models
-├── RELEASE_NOTES.md              # Version history
+├── ARCHITECTURE.md               # Technical design, state machines, and sequence diagrams
+├── RELEASE_NOTES.md              # Version release history (v1.0 & v2.0)
+├── docs/
+│   └── CONTRACT_API.md           # Soroban smart contract API reference & error codes
 └── README.md                     # Project documentation (You are here)
 ```
 
